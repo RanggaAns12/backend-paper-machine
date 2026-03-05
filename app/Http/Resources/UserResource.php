@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id'         => $this->id,
+            'name'       => $this->name,
+            'username'   => $this->username,
+            'is_active'  => $this->is_active,
+            // Gunakan getRoleNames() bukan roles->first()->name
+            // getRoleNames() hanya ambil nama, tidak load permissions
+            'role'       => $this->whenLoaded('roles',
+                fn() => $this->roles->first()?->name,
+                fn() => $this->getRoleNames()->first()
+            ),
+            'created_at' => $this->created_at?->toDateTimeString(),
+        ];
+    }
+}
