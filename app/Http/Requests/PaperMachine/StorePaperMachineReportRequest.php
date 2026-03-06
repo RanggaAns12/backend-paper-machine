@@ -6,7 +6,10 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StorePaperMachineReportRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool 
+    { 
+        return true; 
+    }
 
     public function rules(): array
     {
@@ -15,14 +18,13 @@ class StorePaperMachineReportRequest extends FormRequest
             'operator_name' => ['required', 'string', 'max:255'],
             'date'          => ['required', 'date'],
             'grup'          => ['required', 'string', 'max:100'],
-            'working_hour'  => ['required', 'numeric', 'min:0'],
-            'steam'         => ['required', 'numeric', 'min:0'],
-            'water'         => ['required', 'numeric', 'min:0'],
-            'kg_per_shift'  => ['required', 'numeric', 'min:0'],
-            'l_per_shift'   => ['required', 'numeric', 'min:0'],
-            'power'         => ['required', 'numeric', 'min:0'],
-            'temperature'   => ['required', 'numeric'],
-            'mwh_per_shift' => ['required', 'numeric', 'min:0'],
+            
+            // Kolom ini sudah disesuaikan dengan database
+            'steam_kg'      => ['required', 'numeric', 'min:0'],
+            'water_l'       => ['required', 'numeric', 'min:0'],
+            'power_mwh'     => ['required', 'numeric', 'min:0'],
+            'temperature_c' => ['required', 'numeric'],
+            
             'total_pm'      => ['required', 'numeric', 'min:0'],
             'total_winder'  => ['required', 'numeric', 'min:0'],
             'remarks'       => ['nullable', 'string'],

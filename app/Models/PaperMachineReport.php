@@ -7,24 +7,30 @@ use Illuminate\Database\Eloquent\Model;
 class PaperMachineReport extends Model
 {
     protected $fillable = [
-        'machine_id', 'operator_id', 'operator_name', 'date', 'grup', // <-- operator_name ditambahkan
-        'working_hour', 'steam', 'water', 'kg_per_shift',
-        'l_per_shift', 'power', 'temperature', 'mwh_per_shift',
-        'total_pm', 'total_winder', 'remarks',
+        'machine_id', 
+        'operator_id', 
+        'operator_name', 
+        'date', 
+        'grup', 
+        'steam_kg',       // Sesuai migration
+        'water_l',        // Sesuai migration
+        'power_mwh',      // Sesuai migration
+        'temperature_c',  // Sesuai migration
+        'total_pm', 
+        'total_winder', 
+        'remarks',
+        'is_locked'       // Tambahan dari migration
     ];
 
     protected $casts = [
         'date'          => 'date',
-        // 'working_hour'  => 'decimal:2', // <-- Dihapus karena sekarang string (e.g. "08:00 - 16:00")
-        'steam'         => 'decimal:2',
-        'water'         => 'decimal:2',
-        'kg_per_shift'  => 'decimal:2',
-        'l_per_shift'   => 'decimal:2',
-        'power'         => 'decimal:2',
-        'temperature'   => 'decimal:2',
-        'mwh_per_shift' => 'decimal:4',
+        'steam_kg'      => 'decimal:2',
+        'water_l'       => 'decimal:2',
+        'power_mwh'     => 'decimal:4',
+        'temperature_c' => 'decimal:2',
         'total_pm'      => 'decimal:2',
         'total_winder'  => 'decimal:2',
+        'is_locked'     => 'boolean',
     ];
 
     public function machine(): \Illuminate\Database\Eloquent\Relations\BelongsTo

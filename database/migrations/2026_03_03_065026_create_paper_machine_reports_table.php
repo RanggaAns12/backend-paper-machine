@@ -10,36 +10,40 @@ return new class extends Migration {
         Schema::create('paper_machine_reports', function (Blueprint $table) {
             $table->id();
             
-            // Relasi ke tabel machines
+            // Relasi
             $table->foreignId('machine_id')->constrained('machines')->cascadeOnDelete();
-            
-            // operator_id = Akun user (admin-pm) yang sedang login di komputer
             $table->foreignId('operator_id')->constrained('users')->cascadeOnDelete();
             
             // ==========================================
-            // TAMBAHAN BARU: Nama Fisik Kepala Shift
+            // HEADER SHIFT
             // ==========================================
             $table->string('operator_name'); 
-
             $table->date('date');
             $table->string('grup');
+
+            // ==========================================
+            // PARAMETER KONSUMSI ENERGI (Disesuaikan dengan satuan aslinya)
+            // ==========================================
+            // Steam hanya Kg/Shift
+            $table->decimal('steam_kg', 10, 2)->nullable();
             
-            // DIUBAH: Menjadi string agar bisa simpan "08:00 - 16:00"
-            $table->string('working_hour'); 
-
-            // DIUBAH: Disamakan dengan Form UI agar gampang di-mapping
-            $table->decimal('steam_kg_shift', 10, 2)->nullable();
-            $table->decimal('steam_l_shift', 10, 2)->nullable();
-            $table->decimal('water_kg_shift', 10, 2)->nullable();
-            $table->decimal('water_l_shift', 10, 2)->nullable();
+            // Water hanya L/Shift
+            $table->decimal('water_l', 10, 2)->nullable();
+            
+            // Power MWh/Shift & Temperature Celcius
             $table->decimal('power_mwh', 10, 4)->nullable(); 
-            $table->decimal('temperature', 8, 2)->nullable();
+            $table->decimal('temperature_c', 8, 2)->nullable();
 
-            // Kalkulasi Total
+            // ==========================================
+            // SUMMARY & STATUS
+            // ==========================================
             $table->decimal('total_pm', 10, 2)->nullable();
             $table->decimal('total_winder', 10, 2)->nullable();
-            
             $table->text('remarks')->nullable();
+            
+            // Kolom Status Laporan (Terkunci / Draft)
+            $table->boolean('is_locked')->default(false);
+
             $table->timestamps();
         });
     }
