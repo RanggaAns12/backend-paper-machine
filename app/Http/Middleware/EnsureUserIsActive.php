@@ -10,12 +10,16 @@ class EnsureUserIsActive
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Cek jika user ada dan tidak aktif
         if ($request->user() && !$request->user()->is_active) {
+            // ✅ Revoke token user tidak aktif
+            $request->user()->tokens()->delete();
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.',
-                'data'    => null,
-                'errors'  => null,
+                'message' => 'Akun Anda tidak aktif. Hubungi administrator.',
+                'data' => null,
+                'errors' => null,
             ], 403);
         }
 

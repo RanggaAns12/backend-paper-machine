@@ -3,23 +3,43 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaperMachineRoll extends Model
 {
     protected $fillable = [
-        'report_id', 'no', 'roll_number', 'speed_reel_wire',
-        'tonase_roll', 'width_cm', 'solid_starch_percent',
-        'internal_sizing_kg_per_h', 'floc_l_per_h', 'coag_l_per_h',
-        'yellow_ppm', 'yellow_l_per_h', 'red_ppm', 'red_l_per_h',
-        'brown_ppm', 'brown_l_per_h', 'external_sizing_kg_per_tp', 'pac_ml_per_m',
+        'report_id',
+        'no',
+        'jrk_instruction',
+        'grade',
+        'roll_number',
+        'speed_reel',
+        'tonase_roll',
+        'width_cm',
+        'solid_starch_percent',
+        'dry_strength_kg',
+        'internal_sizing_kg_per_h',
+        'floc_l_per_h',
+        'coag_l_per_h',
+        'yellow_ppm',
+        'yellow_l_per_h',
+        'red_ppm',
+        'red_l_per_h',
+        'brown_ppm',
+        'brown_l_per_h',
+        'external_sizing_kg_per_tp',
+        'pac_ml_per_m',
+        'is_saved',
     ];
 
     protected $casts = [
+        'report_id'                 => 'integer',
         'no'                        => 'integer',
-        'speed_reel_wire'           => 'decimal:2',
+        'speed_reel'                => 'decimal:2',
         'tonase_roll'               => 'decimal:2',
         'width_cm'                  => 'decimal:2',
         'solid_starch_percent'      => 'decimal:2',
+        'dry_strength_kg'           => 'decimal:2',
         'internal_sizing_kg_per_h'  => 'decimal:2',
         'floc_l_per_h'              => 'decimal:2',
         'coag_l_per_h'              => 'decimal:2',
@@ -27,13 +47,14 @@ class PaperMachineRoll extends Model
         'yellow_l_per_h'            => 'decimal:2',
         'red_ppm'                   => 'decimal:2',
         'red_l_per_h'               => 'decimal:2',
-        'black_ppm'                 => 'decimal:2',
-        'black_l_per_h'             => 'decimal:2',
+        'brown_ppm'                 => 'decimal:2',
+        'brown_l_per_h'             => 'decimal:2',
         'external_sizing_kg_per_tp' => 'decimal:2',
         'pac_ml_per_m'              => 'decimal:2',
+        'is_saved'                  => 'boolean',
     ];
 
-    public function report(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function report(): BelongsTo
     {
         return $this->belongsTo(PaperMachineReport::class, 'report_id');
     }

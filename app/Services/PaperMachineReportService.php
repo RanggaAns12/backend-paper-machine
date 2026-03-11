@@ -4,70 +4,135 @@ namespace App\Services;
 
 use App\Models\PaperMachineReport;
 use App\Repositories\Interfaces\PaperMachineReportRepositoryInterface;
-use App\Repositories\Interfaces\PaperMachineRollRepositoryInterface;
-use App\Repositories\Interfaces\PaperMachineProblemRepositoryInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PaperMachineReportService
 {
-    public function __construct(
-        protected PaperMachineReportRepositoryInterface $reportRepository,
-        protected PaperMachineRollRepositoryInterface $rollRepository,
-        protected PaperMachineProblemRepositoryInterface $problemRepository
-    ) {}
+    protected PaperMachineReportRepositoryInterface $reportRepository;
 
-    public function getAllReports(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    public function __construct(PaperMachineReportRepositoryInterface $reportRepository)
     {
-        return $this->reportRepository->getAllPaginated($perPage, $filters);
+        $this->reportRepository = $reportRepository;
     }
 
+    /**
+     * Create report with details (rolls & problems)
+     */
+    public function createReportWithDetails(array $data, int $operatorId): PaperMachineReport
+    {
+        return DB::transaction(function () use ($data, $operatorId) {
+            $headerData = collect($data)->except(['rolls', 'problems'])->toArray();
+            $headerData['operator_id'] = $operatorId;
+
+            $report = $this->reportRepository->create($headerData);
+
+            \Log::info('Report created with ID: ' . $report->id);
+
+            if (!empty($data['rolls']) && is_array($data['rolls'])) {
+                \Log::info('Creating rolls for report ID: ' . $report->id, [
+                    'rolls_count' => count($data['rolls'])
+                ]);
+                $this->reportRepository->createBulkRolls($report->id, $data['rolls']);
+            }
+
+            if (!empty($data['problems']) && is_array($data['problems'])) {
+                \Log::info('Creating problems for report ID: ' . $report->id, [
+                    'problems_count' => count($data['problems'])
+                ]);
+                $this->reportRepository->createBulkProblems($report->id, $data['problems']);
+            }
+
+            return $report->fresh(['machine', 'operator', 'rolls', 'problems']);
+        });
+    }
+
+    /**
+     * Update report header and problems only.
+     * Rolls are handled by row-level endpoints/controller.
+     */
+    public function updateReport(PaperMachineReport $report, array $data): PaperMachineReport
+    {
+        return DB::transaction(function () use ($report, $data) {
+            $headerData = collect($data)->except(['rolls', 'problems'])->toArray();
+
+            \Log::info('Updating report header', [
+                'report_id' => $report->id,
+                'header_keys' => array_keys($headerData),
+                'has_rolls_key' => array_key_exists('rolls', $data),
+                'has_problems_key' => array_key_exists('problems', $data),
+            ]);
+
+            $updatedReport = $this->reportRepository->update($report, $headerData);
+
+            /**
+             * IMPORTANT:
+             * Do not delete/recreate rolls here.
+             * Row save/update is handled by PaperMachineRollController / PaperMachineRollService.
+             * This prevents previously saved rolls from disappearing on refresh.
+             */
+
+            if (array_key_exists('problems', $data) && is_array($data['problems'])) {
+                \Log::info('Refreshing problems for report', [
+                    'report_id' => $report->id,
+                    'problems_count' => count($data['problems'])
+                ]);
+
+                $report->problems()->delete();
+
+                if (!empty($data['problems'])) {
+                    $this->reportRepository->createBulkProblems($report->id, $data['problems']);
+                }
+            }
+
+            return $updatedReport->fresh(['machine', 'operator', 'rolls', 'problems']);
+        });
+    }
+
+    /**
+     * Get report by ID
+     */
+    public function getReportById(int $id): ?PaperMachineReport
+    {
+        return $this->reportRepository->findById($id);
+    }
+
+    /**
+     * Alias for compatibility with controller
+     */
     public function findReportById(int $id): ?PaperMachineReport
     {
         return $this->reportRepository->findById($id);
     }
 
-    public function createReportWithDetails(array $data, int $operatorId): PaperMachineReport
+    /**
+     * Get all reports with pagination
+     */
+    public function getAllReports(array $filters = [], int $perPage = 15)
     {
-        return DB::transaction(function () use ($data, $operatorId) {
-            $reportData = collect($data)->except(['rolls', 'problems'])->toArray();
-            $reportData['operator_id'] = $operatorId;
-
-            $report = $this->reportRepository->create($reportData);
-            unset($reportData);
-
-            if (!empty($data['rolls'])) {
-                $this->rollRepository->createBulk($report->id, $data['rolls']);
-            }
-
-            if (!empty($data['problems'])) {
-                $this->problemRepository->createBulk($report->id, $data['problems']);
-            }
-
-            unset($data);
-
-            Log::info('Report created', ['report_id' => $report->id, 'operator_id' => $operatorId]);
-
-            return $this->reportRepository->findById($report->id);
-        });
+        return $this->reportRepository->getAllPaginated($filters, $perPage);
     }
 
-    public function updateReport(PaperMachineReport $report, array $data): PaperMachineReport
+    /**
+     * Unlock report (super admin only)
+     */
+    public function unlockReport(int $id): ?PaperMachineReport
     {
-        $updated = $this->reportRepository->update($report, $data);
+        $report = $this->reportRepository->findById($id);
 
-        Log::info('Report updated', ['report_id' => $report->id]);
+        if (!$report) {
+            return null;
+        }
 
-        unset($data);
-
-        return $updated;
+        return $this->reportRepository
+            ->update($report, ['is_locked' => false])
+            ->fresh(['machine', 'operator', 'rolls', 'problems']);
     }
 
+    /**
+     * Delete report
+     */
     public function deleteReport(PaperMachineReport $report): bool
     {
-        Log::info('Report deleted', ['report_id' => $report->id]);
-
         return $this->reportRepository->delete($report);
     }
 }
