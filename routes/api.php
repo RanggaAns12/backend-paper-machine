@@ -8,6 +8,7 @@ use App\Http\Controllers\PaperMachine\PaperMachineReportController;
 use App\Http\Controllers\PaperMachine\PaperMachineRollController;
 use App\Http\Controllers\PaperMachine\PaperMachineProblemController;
 use App\Http\Controllers\Winder\WinderLogController;
+use App\Http\Controllers\PaperMachine\OperatorController;
 use Illuminate\Support\Facades\Route;
 
 // Health Check
@@ -69,6 +70,8 @@ Route::middleware(['json.force'])->group(function () {
                     ->name('paper-machine.problems.update');
                 Route::delete('problems/{id}', [PaperMachineProblemController::class, 'destroy'])
                     ->name('paper-machine.problems.destroy');
+
+                Route::apiResource('operators', OperatorController::class);
             });
 
         // ██████ LAB MODULE ██████

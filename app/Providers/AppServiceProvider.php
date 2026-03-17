@@ -12,6 +12,7 @@ use App\Repositories\Interfaces\PaperMachineProblemRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\QualityTestRepositoryInterface;
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
+use App\Repositories\Interfaces\OperatorRepositoryInterface;
 
 // Import Repositories
 use App\Repositories\MachineRepository;
@@ -21,6 +22,7 @@ use App\Repositories\PaperMachineProblemRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\QualityTestRepository;
 use App\Repositories\WinderLogRepository;
+use App\Repositories\OperatorRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(QualityTestRepositoryInterface::class, QualityTestRepository::class);
         $this->app->bind(WinderLogRepositoryInterface::class, WinderLogRepository::class);
+        $this->app->bind(OperatorRepositoryInterface::class, OperatorRepository::class);
     }
 
     /**

@@ -22,29 +22,27 @@ return new class extends Migration {
             // No Roll dibuat unik agar tidak boleh ada yang sama
             $table->string('roll_number')->unique();
             
-            // Kecepatan Mesin (Hanya menyisakan Reel)
-            $table->decimal('speed_reel', 10, 2)->nullable();
-            
-            // Parameter Kertas & Produksi
-            $table->decimal('tonase_roll', 10, 2)->nullable();
-            $table->decimal('width_cm', 10, 2)->nullable();
-            $table->decimal('solid_starch_percent', 8, 2)->nullable();
+            // Menggunakan float agar .00 hilang pada angka bulat, tapi tetap bisa menampung angka desimal
+            $table->float('speed_reel')->nullable();
+            $table->float('tonase_roll')->nullable();
+            $table->float('width_cm')->nullable();
+            $table->float('solid_starch_percent')->nullable();
             
             // Dry strength dalam Kg
-            $table->decimal('dry_strength_kg', 10, 2)->nullable()->comment('Dry Strength dalam satuan Kg');
+            $table->float('dry_strength_kg')->nullable()->comment('Dry Strength dalam satuan Kg');
             
             // Parameter Kimia (Chemicals)
-            $table->decimal('internal_sizing_kg_per_h', 10, 2)->nullable();
-            $table->decimal('floc_l_per_h', 10, 2)->nullable();
-            $table->decimal('coag_l_per_h', 10, 2)->nullable();
-            $table->decimal('yellow_ppm', 10, 2)->nullable();
-            $table->decimal('yellow_l_per_h', 10, 2)->nullable();
-            $table->decimal('red_ppm', 10, 2)->nullable();
-            $table->decimal('red_l_per_h', 10, 2)->nullable();
-            $table->decimal('brown_ppm', 10, 2)->nullable();
-            $table->decimal('brown_l_per_h', 10, 2)->nullable();
-            $table->decimal('external_sizing_kg_per_tp', 10, 2)->nullable();
-            $table->decimal('pac_ml_per_m', 10, 2)->nullable();
+            $table->float('internal_sizing_kg_per_h')->nullable();
+            $table->float('floc_l_per_h')->nullable();
+            $table->float('coag_l_per_h')->nullable();
+            $table->float('yellow_ppm')->nullable();
+            $table->float('yellow_l_per_h')->nullable();
+            $table->float('red_ppm')->nullable();
+            $table->float('red_l_per_h')->nullable();
+            $table->float('brown_ppm')->nullable();
+            $table->float('brown_l_per_h')->nullable();
+            $table->float('external_sizing_kg_per_tp')->nullable();
+            $table->float('pac_ml_per_m')->nullable();
             
             // Status untuk tracking apakah draft sudah di-save
             $table->boolean('is_saved')->default(false);
