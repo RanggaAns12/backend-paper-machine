@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash; // ✅ Tambahkan ini untuk cek Hash Password
 
 class AuthController extends Controller
 {
@@ -60,6 +61,41 @@ class AuthController extends Controller
                 'role'      => $user->getRoleNames()->first(), // Ambil nama role saja
             ],
             'errors'  => null,
+        ]);
+    }
+
+    // ✅ FITUR BARU: Ganti Password
+    public function changePassword(Request $request): JsonResponse
+    {
+        // 1. Validasi Input
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password'     => ['required', 'string', 'min:8', 'confirmed'], 
+        ]);
+
+        $user = $request->user();
+
+        // 2. Cek apakah password lama yang dimasukkan sesuai dengan di database
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password saat ini tidak sesuai.',
+                'data'    => null,
+                'errors'  => ['current_password' => ['Password saat ini salah.']]
+            ], 422);
+        }
+
+        // 3. Update password baru (Otomatis di-hash oleh model User karena ada protected $casts)
+        $user->update([
+            'password' => $request->new_password
+        ]);
+
+        // 4. Return response sukses
+        return response()->json([
+            'success' => true,
+            'message' => 'Password Anda berhasil diperbarui.',
+            'data'    => null,
+            'errors'  => null
         ]);
     }
 }
