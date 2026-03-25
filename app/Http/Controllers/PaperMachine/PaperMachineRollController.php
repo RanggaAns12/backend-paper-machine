@@ -34,13 +34,31 @@ class PaperMachineRollController extends Controller
             if ((bool) $report->is_locked) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Laporan sudah dikunci. Tidak dapat menambah roll.',
+                    'message' => 'Laporan sudah dikunci. Tidak dapat menambah/merubah roll.',
                     'data' => null,
                     'errors' => null
                 ], 403);
             }
 
-            $createdRoll = $this->rollService->addRollToReport($reportId, $request->validated());
+            $data = $request->validated();
+
+            // ✅ AUTO-UPSERT: Jika Frontend mengirimkan ID, berati ini adalah proses UPDATE yang "nyasar" ke Store.
+            if (!empty($data['id'])) {
+                $existingRoll = $this->rollService->findRollById($data['id']);
+                
+                if ($existingRoll) {
+                    $updated = $this->rollService->updateRoll($existingRoll, $data);
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Roll berhasil diupdate.',
+                        'data' => new PaperMachineRollResource($updated),
+                        'errors' => null
+                    ], 200);
+                }
+            }
+
+            // Jika tidak ada ID, eksekusi proses pembuatan Roll Baru
+            $createdRoll = $this->rollService->addRollToReport($reportId, $data);
 
             return response()->json([
                 'success' => true,
@@ -48,9 +66,9 @@ class PaperMachineRollController extends Controller
                 'data' => new PaperMachineRollResource($createdRoll),
                 'errors' => null
             ], 201);
+
         } catch (Throwable $e) {
             report($e);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menambahkan roll: ' . $e->getMessage(),
@@ -92,9 +110,9 @@ class PaperMachineRollController extends Controller
                 'data' => new PaperMachineRollResource($updated),
                 'errors' => null
             ], 200);
+
         } catch (Throwable $e) {
             report($e);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengupdate roll: ' . $e->getMessage(),
@@ -136,9 +154,9 @@ class PaperMachineRollController extends Controller
                 'data' => null,
                 'errors' => null
             ], 200);
+
         } catch (Throwable $e) {
             report($e);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus roll: ' . $e->getMessage(),

@@ -11,18 +11,31 @@ class StorePaperMachineRollRequest extends FormRequest
 
     public function rules(): array
     {
-        // Supaya saat Update, ID roll yang sedang diupdate diabaikan dari pengecekan unique
-        $rollId = $this->route('id');
+        // ✅ FIX FATAL: Tangkap ID Roll dari Payload Body Angular (prioritas utama)
+        // Jika tidak ada di body, cek dari route parameter (khusus untuk method PUT/PATCH)
+        $rollId = $this->input('id');
+
+        if (!$rollId && in_array($this->method(), ['PUT', 'PATCH'])) {
+            $rollId = $this->route('roll') ?? $this->route('paper_machine_roll') ?? $this->route('id');
+        }
+
+        $uniqueRollRule = Rule::unique('paper_machine_rolls', 'roll_number');
+        
+        // ✅ Abaikan pengecekan duplikat jika ini adalah proses Update (ID ditemukan)
+        if ($rollId) {
+            $uniqueRollRule->ignore($rollId);
+        }
 
         return [
-            'no'                           => ['required', 'integer', 'min:1', 'max:11'],
+            'id'                           => ['nullable', 'integer'], // Tambahkan agar diizinkan masuk payload
+            'no'                           => ['required', 'integer', 'min:1', 'max:100'],
             'jrk_instruction'              => ['nullable', 'string', 'max:100'],
             'grade'                        => ['nullable', 'string', 'max:100'],
             'roll_number'                  => [
                 'required', 
                 'string', 
                 'max:100',
-                Rule::unique('paper_machine_rolls', 'roll_number')->ignore($rollId)
+                $uniqueRollRule
             ],
             'speed_reel'                   => ['nullable', 'numeric'],
             'tonase_roll'                  => ['nullable', 'numeric'],
