@@ -15,6 +15,9 @@ return new class extends Migration {
             
             $table->integer('no');
             
+            // Jam Kerja / Working Hour
+            $table->string('working_hour')->nullable()->comment('Jam Kerja atau Shift');
+            
             // No. Jrk/Intruksi Kerja dan Grade
             $table->string('jrk_instruction')->nullable()->comment('No. Jrk / Instruksi Kerja');
             $table->string('grade')->nullable()->comment('Grade Kertas');
@@ -31,16 +34,18 @@ return new class extends Migration {
             // Dry strength dalam Kg
             $table->float('dry_strength_kg')->nullable()->comment('Dry Strength dalam satuan Kg');
             
-            // Parameter Kimia (Chemicals)
-            $table->float('internal_sizing_kg_per_h')->nullable();
+            // Parameter Kimia (Chemicals) - Diurutkan ulang dan Internal Sizing dihapus
             $table->float('floc_l_per_h')->nullable();
             $table->float('coag_l_per_h')->nullable();
+            
+            // Urutan baru: Brown -> Yellow -> Red
+            $table->float('brown_ppm')->nullable();
+            $table->float('brown_l_per_h')->nullable();
             $table->float('yellow_ppm')->nullable();
             $table->float('yellow_l_per_h')->nullable();
             $table->float('red_ppm')->nullable();
             $table->float('red_l_per_h')->nullable();
-            $table->float('brown_ppm')->nullable();
-            $table->float('brown_l_per_h')->nullable();
+            
             $table->float('external_sizing_kg_per_tp')->nullable();
             $table->float('pac_ml_per_m')->nullable();
             

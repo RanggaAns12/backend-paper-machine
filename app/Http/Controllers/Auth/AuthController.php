@@ -8,7 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash; // ✅ Tambahkan ini untuk cek Hash Password
+use Illuminate\Support\Facades\Hash; // ✅ Wajib ada
 
 class AuthController extends Controller
 {
@@ -47,7 +47,6 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         // Ambil user dari request (sudah ada dari Sanctum)
-        // Jangan load ulang semua relasi berat
         $user = $request->user();
 
         return response()->json([
@@ -58,13 +57,13 @@ class AuthController extends Controller
                 'name'      => $user->name,
                 'username'  => $user->username,
                 'is_active' => $user->is_active,
-                'role'      => $user->getRoleNames()->first(), // Ambil nama role saja
+                'role'      => $user->getRoleNames()->first(), 
             ],
             'errors'  => null,
         ]);
     }
 
-    // ✅ FITUR BARU: Ganti Password
+    // ✅ FITUR GANTI PASSWORD
     public function changePassword(Request $request): JsonResponse
     {
         // 1. Validasi Input
@@ -82,12 +81,12 @@ class AuthController extends Controller
                 'message' => 'Password saat ini tidak sesuai.',
                 'data'    => null,
                 'errors'  => ['current_password' => ['Password saat ini salah.']]
-            ], 422);
+            ], 422); // 422 agar ditangkap dengan baik oleh Angular Mas
         }
 
-        // 3. Update password baru (Otomatis di-hash oleh model User karena ada protected $casts)
+        // 3. Update password baru (✅ FIX: Wajib dibungkus Hash::make agar 100% aman)
         $user->update([
-            'password' => $request->new_password
+            'password' => Hash::make($request->new_password)
         ]);
 
         // 4. Return response sukses

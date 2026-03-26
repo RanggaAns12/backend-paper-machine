@@ -27,6 +27,9 @@ Route::middleware(['json.force'])->group(function () {
         Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+            
+            // ✅ FIX: Route Ganti Password ditambahkan di sini
+            Route::post('/change-password', [AuthController::class, 'changePassword'])->name('auth.change-password');
         });
     });
 
