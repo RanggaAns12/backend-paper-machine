@@ -8,111 +8,71 @@ use App\Http\Requests\WinderLog\UpdateWinderLogRequest;
 use App\Http\Resources\WinderLogResource;
 use App\Services\WinderLogService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class WinderLogController extends Controller
 {
-    public function __construct(protected WinderLogService $winderLogService) {}
+    protected $winderLogService;
 
-    public function index(Request $request): JsonResponse
+    // Inject Service
+    public function __construct(WinderLogService $winderLogService)
     {
-        $perPage = (int) $request->query('per_page', 15);
-        $filters = $request->only(['status', 'report_id', 'operator_id']);
+        $this->winderLogService = $winderLogService;
+    }
 
-        $logs = $this->winderLogService->getAllWinderLogs($perPage, $filters);
-
-        unset($filters);
-
+    public function index(): JsonResponse
+    {
+        $logs = $this->winderLogService->getAllLogs();
+        
         return response()->json([
             'success' => true,
-            'message' => 'Data winder log berhasil diambil.',
-            'data'    => WinderLogResource::collection($logs)->response()->getData(true),
-            'errors'  => null,
-        ]);
+            'message' => 'Berhasil mengambil data Winder Log',
+            // Gunakan Resource Collection untuk menyeragamkan format
+            'data'    => WinderLogResource::collection($logs)
+        ], 200);
     }
 
     public function store(StoreWinderLogRequest $request): JsonResponse
     {
-        $log = $this->winderLogService->createWinderLog(
-            $request->validated(),
-            $request->user()->id
-        );
+        $validatedData = $request->validated();
+        $log = $this->winderLogService->createLog($validatedData);
 
         return response()->json([
             'success' => true,
-            'message' => 'Winder log berhasil dibuat.',
-            'data'    => new WinderLogResource($log),
-            'errors'  => null,
+            'message' => 'Data Winder Log berhasil disimpan',
+            'data'    => new WinderLogResource($log)
         ], 201);
     }
 
-    public function show(int $id): JsonResponse
+    public function show($id): JsonResponse
     {
-        $log = $this->winderLogService->findWinderLogById($id);
-
-        if (!$log) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Winder log tidak ditemukan.',
-                'data'    => null,
-                'errors'  => null,
-            ], 404);
-        }
+        $log = $this->winderLogService->getLogById($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Data winder log ditemukan.',
-            'data'    => new WinderLogResource($log),
-            'errors'  => null,
-        ]);
+            'message' => 'Detail data Winder Log',
+            'data'    => new WinderLogResource($log)
+        ], 200);
     }
 
-    public function update(UpdateWinderLogRequest $request, int $id): JsonResponse
+    public function update(UpdateWinderLogRequest $request, $id): JsonResponse
     {
-        $log = $this->winderLogService->findWinderLogById($id);
-
-        if (!$log) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Winder log tidak ditemukan.',
-                'data'    => null,
-                'errors'  => null,
-            ], 404);
-        }
-
-        $this->authorize('update', $log);
-
-        $updated = $this->winderLogService->updateWinderLog($log, $request->validated());
+        $validatedData = $request->validated();
+        $log = $this->winderLogService->updateLog($id, $validatedData);
 
         return response()->json([
             'success' => true,
-            'message' => 'Winder log berhasil diupdate.',
-            'data'    => new WinderLogResource($updated),
-            'errors'  => null,
-        ]);
+            'message' => 'Data Winder Log berhasil diperbarui',
+            'data'    => new WinderLogResource($log)
+        ], 200);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy($id): JsonResponse
     {
-        $log = $this->winderLogService->findWinderLogById($id);
-
-        if (!$log) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Winder log tidak ditemukan.',
-                'data'    => null,
-                'errors'  => null,
-            ], 404);
-        }
-
-        $this->authorize('delete', $log);
-        $this->winderLogService->deleteWinderLog($log);
+        $this->winderLogService->deleteLog($id);
 
         return response()->json([
             'success' => true,
-            'message' => 'Winder log berhasil dihapus.',
-            'data'    => null,
-            'errors'  => null,
-        ]);
+            'message' => 'Data Winder Log berhasil dihapus'
+        ], 200);
     }
 }

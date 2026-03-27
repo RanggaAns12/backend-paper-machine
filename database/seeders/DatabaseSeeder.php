@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             // 2. DATA PENGGUNA (Bergantung pada RoleSeeder)
             SuperadminSeeder::class,
             AdminPmSeeder::class,
+            AdminWinderSeeder::class,
 
             // 3. DATA TRANSAKSI / LAPORAN (Bergantung pada MachineSeeder & OperatorSeeder)
             PaperMachineSeeder::class, 

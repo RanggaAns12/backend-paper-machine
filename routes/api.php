@@ -1,15 +1,19 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
+// Import Controllers
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Superadmin\UserController;
 use App\Http\Controllers\Superadmin\MachineController;
 use App\Http\Controllers\Lab\QualityTestController;
+use App\Http\Controllers\Winder\WinderLogController;
+
+// Import Paper Machine Controllers
 use App\Http\Controllers\PaperMachine\PaperMachineReportController;
 use App\Http\Controllers\PaperMachine\PaperMachineRollController;
 use App\Http\Controllers\PaperMachine\PaperMachineProblemController;
-use App\Http\Controllers\Winder\WinderLogController;
 use App\Http\Controllers\PaperMachine\OperatorController;
-use Illuminate\Support\Facades\Route;
 
 // Health Check
 Route::get('/test', fn() => response()->json(['ok' => true]));
@@ -27,8 +31,6 @@ Route::middleware(['json.force'])->group(function () {
         Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
-            
-            // ✅ FIX: Route Ganti Password ditambahkan di sini
             Route::post('/change-password', [AuthController::class, 'changePassword'])->name('auth.change-password');
         });
     });
@@ -50,15 +52,13 @@ Route::middleware(['json.force'])->group(function () {
             ->middleware('role:superadmin|admin_paper_machine')
             ->group(function () {
                 
-                // Reports - API Resource (index, store, show, update, destroy)
+                // Reports
                 Route::apiResource('reports', PaperMachineReportController::class);
-                
-                // ⭐ TAMBAHAN: Unlock Report (Super Admin Only)
                 Route::patch('reports/{id}/unlock', [PaperMachineReportController::class, 'unlock'])
                     ->name('paper-machine.reports.unlock')
                     ->middleware('role:superadmin'); // Hanya superadmin bisa unlock
 
-                // Rolls - Nested under reports
+                // Rolls
                 Route::post('reports/{report}/rolls', [PaperMachineRollController::class, 'store'])
                     ->name('paper-machine.reports.rolls.store');
                 Route::put('rolls/{id}', [PaperMachineRollController::class, 'update'])
@@ -66,7 +66,7 @@ Route::middleware(['json.force'])->group(function () {
                 Route::delete('rolls/{id}', [PaperMachineRollController::class, 'destroy'])
                     ->name('paper-machine.rolls.destroy');
 
-                // Problems - Nested under reports
+                // Problems
                 Route::post('reports/{report}/problems', [PaperMachineProblemController::class, 'store'])
                     ->name('paper-machine.reports.problems.store');
                 Route::put('problems/{id}', [PaperMachineProblemController::class, 'update'])
@@ -74,6 +74,7 @@ Route::middleware(['json.force'])->group(function () {
                 Route::delete('problems/{id}', [PaperMachineProblemController::class, 'destroy'])
                     ->name('paper-machine.problems.destroy');
 
+                // Operators
                 Route::apiResource('operators', OperatorController::class);
             });
 
@@ -90,6 +91,7 @@ Route::middleware(['json.force'])->group(function () {
         Route::prefix('winder')
             ->middleware('role:superadmin|admin_winder')
             ->group(function () {
+                // Endpoint untuk modul Winder (Otomatis mencakup index, store, show, update, destroy)
                 Route::apiResource('winder-logs', WinderLogController::class);
             });
     });

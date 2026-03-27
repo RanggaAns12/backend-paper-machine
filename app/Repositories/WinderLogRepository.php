@@ -4,62 +4,35 @@ namespace App\Repositories;
 
 use App\Models\WinderLog;
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class WinderLogRepository implements WinderLogRepositoryInterface
 {
-    public function __construct(protected WinderLog $model) {}
-
-    public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    public function getAll()
     {
-        return $this->model
-            ->select(['id', 'report_id', 'operator_id', 'roll_number', 'status', 'wound_at', 'created_at'])
-            ->with([
-                'report:id,date,grup',
-                'operator:id,name,username',
-            ])
-            ->when(!empty($filters['status']), fn($q) =>
-                $q->where('status', $filters['status'])
-            )
-            ->when(!empty($filters['report_id']), fn($q) =>
-                $q->where('report_id', $filters['report_id'])
-            )
-            ->when(!empty($filters['operator_id']), fn($q) =>
-                $q->where('operator_id', $filters['operator_id'])
-            )
-            ->latest()
-            ->paginate(min($perPage, 50));
+        // Memuat relasi report dan operator untuk mencegah N+1 Query
+        return WinderLog::with(['report', 'operator'])->latest()->get();
     }
 
-    public function findById(int $id): ?WinderLog
+    public function getById(int $id)
     {
-        return $this->model
-            ->select([
-                'id', 'report_id', 'operator_id', 'roll_number',
-                'roll_weight', 'core_diameter', 'width',
-                'status', 'wound_at', 'created_at',
-            ])
-            ->with([
-                'report:id,date,grup',
-                'operator:id,name,username',
-            ])
-            ->find($id);
+        return WinderLog::with(['report', 'operator'])->findOrFail($id);
     }
 
-    public function create(array $data): WinderLog
+    public function create(array $data)
     {
-        return $this->model->create($data);
+        return WinderLog::create($data);
     }
 
-    public function update(WinderLog $winderLog, array $data): WinderLog
+    public function update(int $id, array $data)
     {
-        $winderLog->update($data);
-        unset($data);
-        return $winderLog->fresh(['report', 'operator']);
+        $log = $this->getById($id);
+        $log->update($data);
+        return $log;
     }
 
-    public function delete(WinderLog $winderLog): bool
+    public function delete(int $id)
     {
-        return $winderLog->delete();
+        $log = $this->getById($id);
+        return $log->delete();
     }
 }

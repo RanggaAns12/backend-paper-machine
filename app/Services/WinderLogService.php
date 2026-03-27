@@ -2,53 +2,52 @@
 
 namespace App\Services;
 
-use App\Models\WinderLog;
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Log;
 
 class WinderLogService
 {
-    public function __construct(protected WinderLogRepositoryInterface $winderLogRepository) {}
+    protected $winderLogRepository;
 
-    public function getAllWinderLogs(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    // Inject Repository melalui Constructor
+    public function __construct(WinderLogRepositoryInterface $winderLogRepository)
     {
-        return $this->winderLogRepository->getAllPaginated($perPage, $filters);
+        $this->winderLogRepository = $winderLogRepository;
     }
 
-    public function findWinderLogById(int $id): ?WinderLog
+    public function getAllLogs()
     {
-        return $this->winderLogRepository->findById($id);
+        return $this->winderLogRepository->getAll();
     }
 
-    public function createWinderLog(array $data, int $operatorId): WinderLog
+    public function getLogById(int $id)
     {
-        $log = $this->winderLogRepository->create(
-            array_merge($data, ['operator_id' => $operatorId])
-        );
-
-        Log::info('Winder log created', ['log_id' => $log->id, 'operator_id' => $operatorId]);
-
-        unset($data);
-
-        return $log;
+        return $this->winderLogRepository->getById($id);
     }
 
-    public function updateWinderLog(WinderLog $winderLog, array $data): WinderLog
+    public function createLog(array $data)
     {
-        $updated = $this->winderLogRepository->update($winderLog, $data);
+        // Logika bisnis: Jika status "done" tapi wound_at kosong, otomatis isi dengan waktu sekarang
+        if (isset($data['status']) && $data['status'] === 'done' && empty($data['wound_at'])) {
+            $data['wound_at'] = now();
+        }
 
-        Log::info('Winder log updated', ['log_id' => $winderLog->id]);
-
-        unset($data);
-
-        return $updated;
+        return $this->winderLogRepository->create($data);
     }
 
-    public function deleteWinderLog(WinderLog $winderLog): bool
+    public function updateLog(int $id, array $data)
     {
-        Log::info('Winder log deleted', ['log_id' => $winderLog->id]);
+        $existingLog = $this->getLogById($id);
+        
+        // Logika bisnis saat update
+        if (isset($data['status']) && $data['status'] === 'done' && $existingLog->status !== 'done' && empty($data['wound_at'])) {
+            $data['wound_at'] = now();
+        }
 
-        return $this->winderLogRepository->delete($winderLog);
+        return $this->winderLogRepository->update($id, $data);
+    }
+
+    public function deleteLog(int $id)
+    {
+        return $this->winderLogRepository->delete($id);
     }
 }
