@@ -2,29 +2,39 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class QualityTest extends Model
 {
+    use HasFactory;
+
+    // 1. Daftarkan SEMUA kolom baru agar diizinkan masuk ke database (Mass Assignment)
     protected $fillable = [
-        'report_id', 'tested_by', 'moisture', 'tensile_strength',
-        'brightness', 'smoothness', 'result', 'notes', 'tested_at',
+        'paper_machine_roll_id',
+        'tested_by',
+        'shift',           // Baru
+        'thickness',       // Baru
+        'bw',              // Pengganti gsm
+        'rct',             // Pengganti ring_crush_test
+        'bursting',        // Baru
+        'moisture',        // Pengganti moisture_percent
+        'cobb_top',        // Baru
+        'cobb_bottom',     // Baru
+        'plybonding',      // Baru
+        'warna',           // Baru
+        'status',
+        'notes'
     ];
 
-    protected $casts = [
-        'moisture'         => 'decimal:2',
-        'tensile_strength' => 'decimal:2',
-        'brightness'       => 'decimal:2',
-        'smoothness'       => 'decimal:2',
-        'tested_at'        => 'datetime',
-    ];
-
-    public function report(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    // 2. Relasi ke tabel Jumbo Roll
+    public function paperMachineRoll()
     {
-        return $this->belongsTo(PaperMachineReport::class, 'report_id');
+        return $this->belongsTo(PaperMachineRoll::class, 'paper_machine_roll_id');
     }
 
-    public function tester(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    // 3. Relasi ke tabel Users (Untuk menampilkan nama Admin Lab yang mengetes)
+    public function tester()
     {
         return $this->belongsTo(User::class, 'tested_by');
     }

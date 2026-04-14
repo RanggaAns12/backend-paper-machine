@@ -3,76 +3,89 @@
 namespace App\Http\Controllers\Winder;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\WinderLog\StoreWinderLogRequest;
-use App\Http\Requests\WinderLog\UpdateWinderLogRequest;
-use App\Http\Resources\WinderLogResource;
-use App\Services\WinderLogService;
+use App\Models\WinderLog;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class WinderLogController extends Controller
 {
-    protected $winderLogService;
-
-    // Inject Service
-    public function __construct(WinderLogService $winderLogService)
-    {
-        $this->winderLogService = $winderLogService;
-    }
-
+    /**
+     * Menampilkan semua data View Report Winder
+     */
     public function index(): JsonResponse
     {
-        $logs = $this->winderLogService->getAllLogs();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil mengambil data Winder Log',
-            // Gunakan Resource Collection untuk menyeragamkan format
-            'data'    => WinderLogResource::collection($logs)
-        ], 200);
+        try {
+            // ✅ MENGAMBIL DATA BESERTA RELASINYA
+            $logs = WinderLog::with(['operator', 'paperMachineRoll'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data riwayat Winder berhasil diambil.',
+                'data' => $logs
+            ], 200);
+
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function store(StoreWinderLogRequest $request): JsonResponse
+    /**
+     * Menyimpan data baru dari Form Winder Log Sheet
+     */
+    public function store(Request $request): JsonResponse
     {
-        $validatedData = $request->validated();
-        $log = $this->winderLogService->createLog($validatedData);
+        try {
+            $validated = $request->validate([
+                'paper_machine_roll_id' => 'required|exists:paper_machine_rolls,id',
+                'operator_id'           => 'required|exists:operators,id',
+                'roll_number'           => 'required|string',
+                'roll_weight'           => 'required|numeric',
+                'core_diameter'         => 'nullable|numeric',
+                'width'                 => 'nullable|numeric',
+                'status'                => 'required|in:pending,done',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Winder Log berhasil disimpan',
-            'data'    => new WinderLogResource($log)
-        ], 201);
+            $log = WinderLog::create($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Winder berhasil disimpan.',
+                'data' => $log
+            ], 201);
+
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function show($id): JsonResponse
+    /**
+     * Menghapus data Log (Bisa ditambahkan validasi role nantinya)
+     */
+    public function destroy(int $id): JsonResponse
     {
-        $log = $this->winderLogService->getLogById($id);
+        try {
+            $log = WinderLog::findOrFail($id);
+            $log->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail data Winder Log',
-            'data'    => new WinderLogResource($log)
-        ], 200);
-    }
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Winder berhasil dihapus.'
+            ], 200);
 
-    public function update(UpdateWinderLogRequest $request, $id): JsonResponse
-    {
-        $validatedData = $request->validated();
-        $log = $this->winderLogService->updateLog($id, $validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Winder Log berhasil diperbarui',
-            'data'    => new WinderLogResource($log)
-        ], 200);
-    }
-
-    public function destroy($id): JsonResponse
-    {
-        $this->winderLogService->deleteLog($id);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Winder Log berhasil dihapus'
-        ], 200);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

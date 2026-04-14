@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('winder_logs', function (Blueprint $table) {
             $table->id();
             
-            // 1. Relasi ke Laporan Paper Machine (Sumber Jumbo Roll)
-            $table->foreignId('report_id')
-                  ->constrained('paper_machine_reports')
+            // 1. Relasi ke Jumbo Roll (Paper Machine Roll) yang sedang dipotong
+            // Perbaikan: Diarahkan ke paper_machine_rolls agar traceability terjamin
+            $table->foreignId('paper_machine_roll_id')
+                  ->constrained('paper_machine_rolls')
                   ->cascadeOnDelete();
             
             // 2. Relasi ke Tabel Operator (Karyawan lapangan, BUKAN users)
@@ -25,7 +26,8 @@ return new class extends Migration
                   ->cascadeOnDelete();
             
             // 3. Detail Spesifikasi Potongan Roll Winder
-            $table->string('roll_number'); // Nomor barcode/roll kecil
+            // Perbaikan: Ditambahkan ->unique() untuk mencegah duplikasi barcode
+            $table->string('roll_number')->unique(); 
             $table->decimal('roll_weight', 10, 2)->nullable(); // Berat roll (Kg)
             $table->decimal('core_diameter', 8, 2)->nullable(); // Diameter inti
             $table->decimal('width', 10, 2)->nullable(); // Lebar potongan

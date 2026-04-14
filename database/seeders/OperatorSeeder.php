@@ -10,17 +10,24 @@ class OperatorSeeder extends Seeder
     public function run(): void
     {
         $operators = [
-            ['name' => 'Budi Santoso', 'is_active' => true],
-            ['name' => 'Andi Pratama', 'is_active' => true],
-            ['name' => 'Cipto Mangunkusumo', 'is_active' => true],
-            ['name' => 'Dwi Wahyudi', 'is_active' => true],
+            // Operator PM
+            ['name' => 'Budi Santoso', 'division' => 'pm', 'is_active' => true],
+            ['name' => 'Andi Pratama', 'division' => 'pm', 'is_active' => true],
+            ['name' => 'Cipto Mangunkusumo', 'division' => 'pm', 'is_active' => true],
+            
+            // Operator Winder
+            ['name' => 'Dwi Wahyudi', 'division' => 'winder', 'is_active' => true],
+            ['name' => 'Eko Prasetyo', 'division' => 'winder', 'is_active' => true],
+            ['name' => 'Fajar Nugroho', 'division' => 'winder', 'is_active' => true],
         ];
 
         foreach ($operators as $op) {
-            // Gunakan updateOrCreate agar tidak error duplikat jika di-seed ulang
             Operator::updateOrCreate(
                 ['name' => $op['name']], 
-                ['is_active' => $op['is_active']]
+                [
+                    'division'  => $op['division'],
+                    'is_active' => $op['is_active']
+                ]
             );
         }
     }

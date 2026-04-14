@@ -3,51 +3,69 @@
 namespace App\Services;
 
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
+use App\Repositories\Interfaces\PaperMachineRollRepositoryInterface;
+use Exception;
+use Illuminate\Support\Facades\DB;
 
 class WinderLogService
 {
-    protected $winderLogRepository;
+    protected $winderLogRepo;
+    protected $pmRollRepo;
 
-    // Inject Repository melalui Constructor
-    public function __construct(WinderLogRepositoryInterface $winderLogRepository)
-    {
-        $this->winderLogRepository = $winderLogRepository;
+    public function __construct(
+        WinderLogRepositoryInterface $winderLogRepo,
+        PaperMachineRollRepositoryInterface $pmRollRepo
+    ) {
+        $this->winderLogRepo = $winderLogRepo;
+        $this->pmRollRepo = $pmRollRepo;
     }
 
-    public function getAllLogs()
+    public function getAllWinderLogs()
     {
-        return $this->winderLogRepository->getAll();
+        return $this->winderLogRepo->getAll();
     }
 
-    public function getLogById(int $id)
+    public function getWinderLogById($id)
     {
-        return $this->winderLogRepository->getById($id);
+        return $this->winderLogRepo->findById($id);
     }
 
-    public function createLog(array $data)
+    public function createWinderLog(array $data)
     {
-        // Logika bisnis: Jika status "done" tapi wound_at kosong, otomatis isi dengan waktu sekarang
+        // Pastikan Jumbo Roll (Paper Machine Roll) valid dan ada di database
+        $pmRoll = $this->pmRollRepo->findById($data['paper_machine_roll_id']);
+        if (!$pmRoll) {
+            throw new Exception("Data Paper Machine Roll tidak ditemukan.");
+        }
+
+        // Jika statusnya 'done' saat di-create, otomatis catat waktu wound_at
         if (isset($data['status']) && $data['status'] === 'done' && empty($data['wound_at'])) {
             $data['wound_at'] = now();
         }
 
-        return $this->winderLogRepository->create($data);
+        return DB::transaction(function () use ($data) {
+            return $this->winderLogRepo->create($data);
+        });
     }
 
-    public function updateLog(int $id, array $data)
+    public function updateWinderLog($id, array $data)
     {
-        $existingLog = $this->getLogById($id);
-        
-        // Logika bisnis saat update
-        if (isset($data['status']) && $data['status'] === 'done' && $existingLog->status !== 'done' && empty($data['wound_at'])) {
-            $data['wound_at'] = now();
+        $winderLog = $this->winderLogRepo->findById($id);
+
+        // Auto-fill wound_at jika status berubah menjadi done
+        if (isset($data['status']) && $data['status'] === 'done' && $winderLog->status !== 'done') {
+            $data['wound_at'] = $data['wound_at'] ?? now();
         }
 
-        return $this->winderLogRepository->update($id, $data);
+        return DB::transaction(function () use ($id, $data) {
+            return $this->winderLogRepo->update($id, $data);
+        });
     }
 
-    public function deleteLog(int $id)
+    public function deleteWinderLog($id)
     {
-        return $this->winderLogRepository->delete($id);
+        return DB::transaction(function () use ($id) {
+            return $this->winderLogRepo->delete($id);
+        });
     }
 }

@@ -9,13 +9,20 @@ class WinderLogRepository implements WinderLogRepositoryInterface
 {
     public function getAll()
     {
-        // Memuat relasi report dan operator untuk mencegah N+1 Query
-        return WinderLog::with(['report', 'operator'])->latest()->get();
+        // Mengambil semua data beserta relasinya agar tidak N+1 Query problem
+        return WinderLog::with(['paperMachineRoll', 'operator'])->latest()->get();
     }
 
-    public function getById(int $id)
+    public function findById($id)
     {
-        return WinderLog::with(['report', 'operator'])->findOrFail($id);
+        return WinderLog::with(['paperMachineRoll', 'operator'])->findOrFail($id);
+    }
+
+    public function getByPaperMachineRollId($pmRollId)
+    {
+        return WinderLog::with('operator')
+            ->where('paper_machine_roll_id', $pmRollId)
+            ->get();
     }
 
     public function create(array $data)
@@ -23,16 +30,16 @@ class WinderLogRepository implements WinderLogRepositoryInterface
         return WinderLog::create($data);
     }
 
-    public function update(int $id, array $data)
+    public function update($id, array $data)
     {
-        $log = $this->getById($id);
-        $log->update($data);
-        return $log;
+        $winderLog = $this->findById($id);
+        $winderLog->update($data);
+        return $winderLog;
     }
 
-    public function delete(int $id)
+    public function delete($id)
     {
-        $log = $this->getById($id);
-        return $log->delete();
+        $winderLog = $this->findById($id);
+        return $winderLog->delete();
     }
 }

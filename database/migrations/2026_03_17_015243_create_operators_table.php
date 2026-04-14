@@ -11,6 +11,8 @@ return new class extends Migration
         Schema::create('operators', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            // ✅ Ini dia pemisahnya, defaultnya kita set 'pm'
+            $table->enum('division', ['pm', 'winder'])->default('pm'); 
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

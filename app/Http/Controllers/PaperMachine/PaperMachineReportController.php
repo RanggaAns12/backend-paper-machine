@@ -25,12 +25,22 @@ class PaperMachineReportController extends Controller
             $filters = request()->only(['date', 'grup', 'search']);
             $perPage = (int) request()->get('per_page', 15);
 
+            // 1. Ambil data dari Service (Berupa Paginator)
             $reports = $this->reportService->getAllReports($filters, $perPage);
+
+            // 2. ✅ PERBAIKAN UTAMA: Paksa Laravel mengambil data relasi (Eager Loading)
+            // Ini memastikan data operator, roll, dan problems ikut terbawa untuk Angular
+            $reports->load(['operator', 'rolls', 'problems']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reports retrieved successfully',
-                'data' => PaperMachineReportResource::collection($reports),
+                
+                // 3. ✅ PERBAIKAN UTAMA: Kita gunakan $reports->items() untuk mendapatkan array aslinya.
+                // Jika sebelumnya menggunakan PaperMachineReportResource::collection($reports), 
+                // ada kemungkinan Resource mas "memblokir/menyembunyikan" data relasi tersebut.
+                'data' => $reports->items(), 
+                
                 'meta' => [
                     'current_page' => $reports->currentPage(),
                     'last_page' => $reports->lastPage(),
@@ -141,7 +151,7 @@ class PaperMachineReportController extends Controller
                 ], 401);
             }
 
-            if (($user->role ?? null) !== 'super_admin') {
+            if (($user->role ?? null) !== 'superadmin') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized. Only super admin can unlock reports.',

@@ -43,7 +43,7 @@ class PaperMachineSeeder extends Seeder
 
         $jumlahHari = 5; 
         
-        // ✅ FIX: Buat Global Counter untuk Serial Number Roll agar 100% Unik
+        // Buat Global Counter untuk Serial Number Roll agar 100% Unik
         $globalRollCounter = 1; 
 
         // 3. Looping untuk setiap Operator
@@ -73,7 +73,10 @@ class PaperMachineSeeder extends Seeder
                         'total_pm'      => 0, 
                         'total_winder'  => 0,
                         'remarks'       => "Laporan ke-{$i} pada " . $date->format('d M Y') . " oleh {$operator->name}.",
-                        'is_locked'     => rand(0, 1) == 1, 
+                        
+                        // ✅ FIX UTAMA: Ubah dari rand(0, 1) menjadi true. 
+                        // Wajib disahkan agar masuk radar Lab QC!
+                        'is_locked'     => true, 
                     ]);
 
                     $totalTonase = 0;
@@ -84,7 +87,7 @@ class PaperMachineSeeder extends Seeder
                         $tonase = rand(1400, 1600) + (rand(0, 99) / 100);
                         $totalTonase += $tonase;
 
-                        // ✅ FIX: Gunakan Global Counter + str_pad agar berformat 0001, 0002, 0003 dst.
+                        // Gunakan Global Counter + str_pad agar berformat 0001, 0002, 0003 dst.
                         $uniqueRollNumber = 'R-' . $date->format('Ymd') . '-' . str_pad($globalRollCounter, 4, '0', STR_PAD_LEFT);
                         $globalRollCounter++; // Naikkan nilai counter
 
@@ -113,6 +116,7 @@ class PaperMachineSeeder extends Seeder
                             'external_sizing_kg_per_tp' => rand(50, 60) / 10,
                             'pac_ml_per_m'              => rand(90, 110),
                             'is_saved'                  => true,
+                            // qc_status otomatis 'pending' dari migrasi database
                         ]);
                     }
 

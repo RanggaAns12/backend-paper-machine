@@ -4,54 +4,44 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('paper_machine_rolls', function (Blueprint $table) {
             $table->id();
-            
-            // Relasi ke tabel report
-            $table->foreignId('report_id')->constrained('paper_machine_reports')->cascadeOnDelete();
+            $table->foreignId('report_id')->constrained('paper_machine_reports')->onDelete('cascade');
             
             $table->integer('no');
-            
-            // Jam Kerja / Working Hour
-            $table->string('working_hour')->nullable()->comment('Jam Kerja atau Shift');
-            
-            // No. Jrk/Intruksi Kerja dan Grade
-            $table->string('jrk_instruction')->nullable()->comment('No. Jrk / Instruksi Kerja');
-            $table->string('grade')->nullable()->comment('Grade Kertas');
-
-            // No Roll dibuat unik agar tidak boleh ada yang sama
+            $table->string('working_hour')->nullable();
+            $table->string('jrk_instruction')->nullable();
+            $table->string('grade')->nullable();
             $table->string('roll_number')->unique();
             
-            // Menggunakan float agar .00 hilang pada angka bulat, tapi tetap bisa menampung angka desimal
-            $table->float('speed_reel')->nullable();
-            $table->float('tonase_roll')->nullable();
-            $table->float('width_cm')->nullable();
-            $table->float('solid_starch_percent')->nullable();
+            // Parameter Produksi
+            $table->decimal('speed_reel', 8, 2)->nullable();
+            $table->decimal('tonase_roll', 8, 2)->nullable();
+            $table->decimal('width_cm', 8, 2)->nullable();
             
-            // Dry strength dalam Kg
-            $table->float('dry_strength_kg')->nullable()->comment('Dry Strength dalam satuan Kg');
+            // Parameter Kimia
+            $table->decimal('solid_starch_percent', 8, 2)->nullable();
+            $table->decimal('dry_strength_kg', 8, 2)->nullable();
+            $table->decimal('floc_l_per_h', 8, 2)->nullable();
+            $table->decimal('coag_l_per_h', 8, 2)->nullable();
+            $table->decimal('brown_ppm', 8, 2)->nullable();
+            $table->decimal('brown_l_per_h', 8, 2)->nullable();
+            $table->decimal('yellow_ppm', 8, 2)->nullable();
+            $table->decimal('yellow_l_per_h', 8, 2)->nullable();
+            $table->decimal('red_ppm', 8, 2)->nullable();
+            $table->decimal('red_l_per_h', 8, 2)->nullable();
+            $table->decimal('external_sizing_kg_per_tp', 8, 2)->nullable();
+            $table->decimal('pac_ml_per_m', 8, 2)->nullable();
             
-            // Parameter Kimia (Chemicals) - Diurutkan ulang dan Internal Sizing dihapus
-            $table->float('floc_l_per_h')->nullable();
-            $table->float('coag_l_per_h')->nullable();
+            $table->boolean('is_saved')->default(true);
             
-            // Urutan baru: Brown -> Yellow -> Red
-            $table->float('brown_ppm')->nullable();
-            $table->float('brown_l_per_h')->nullable();
-            $table->float('yellow_ppm')->nullable();
-            $table->float('yellow_l_per_h')->nullable();
-            $table->float('red_ppm')->nullable();
-            $table->float('red_l_per_h')->nullable();
-            
-            $table->float('external_sizing_kg_per_tp')->nullable();
-            $table->float('pac_ml_per_m')->nullable();
-            
-            // Status untuk tracking apakah draft sudah di-save
-            $table->boolean('is_saved')->default(false);
-            
+            // ✅ INI KOLOM BARU UNTUK ALUR QC LAB
+            $table->enum('qc_status', ['pending', 'passed', 'reject', 'downgrade'])->default('pending');
+
             $table->timestamps();
         });
     }

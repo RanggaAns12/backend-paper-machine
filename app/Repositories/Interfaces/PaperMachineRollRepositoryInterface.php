@@ -10,4 +10,5 @@ interface PaperMachineRollRepositoryInterface
     public function findById(int $id): ?PaperMachineRoll;
     public function update(PaperMachineRoll $roll, array $data): PaperMachineRoll;
     public function delete(PaperMachineRoll $roll): bool;
+    public function getAvailableRolls();
 }

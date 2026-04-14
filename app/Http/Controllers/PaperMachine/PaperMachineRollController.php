@@ -5,6 +5,7 @@ namespace App\Http\Controllers\PaperMachine;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaperMachine\StorePaperMachineRollRequest;
 use App\Http\Resources\PaperMachineRollResource;
+use App\Models\PaperMachineRoll; // Ditambahkan untuk fungsi index
 use App\Services\PaperMachineReportService;
 use App\Services\PaperMachineRollService;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,36 @@ class PaperMachineRollController extends Controller
         protected PaperMachineRollService $rollService,
         protected PaperMachineReportService $reportService
     ) {}
+
+    /**
+     * ✅ FUNGSI BARU: Mengambil daftar Jumbo Roll 
+     * (Sangat dibutuhkan oleh modul Winder untuk isi Dropdown)
+     */
+    public function index(): JsonResponse
+    {
+        try {
+            // Mengambil semua data PM Roll (diurutkan dari yang terbaru).
+            // Jika mas nanti punya fungsi khusus di Service (misal: getAvailableRolls),
+            // mas bisa mengganti baris ini menggunakan fungsi dari service tersebut.
+            $rolls = PaperMachineRoll::orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar Jumbo Roll berhasil diambil',
+                'data' => PaperMachineRollResource::collection($rolls),
+                'errors' => null
+            ], 200);
+
+        } catch (Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data Jumbo Roll: ' . $e->getMessage(),
+                'data' => null,
+                'errors' => null
+            ], 500);
+        }
+    }
 
     public function store(StorePaperMachineRollRequest $request, int $reportId): JsonResponse
     {

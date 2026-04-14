@@ -43,4 +43,27 @@ class PaperMachineRollRepository implements PaperMachineRollRepositoryInterface
     {
         return $roll->delete();
     }
+
+    // =================================================================
+    // 🔥 FUNGSI BARU: GATEKEEPER UNTUK WINDER & QC
+    // =================================================================
+    
+    /**
+     * Mengambil daftar Jumbo Roll yang siap dipotong di Winder.
+     * Syarat: Laporan PM sudah di-lock AND QC Status 'passed' atau 'downgrade'.
+     */
+    public function getAvailableRolls()
+    {
+        return $this->model
+            ->with('report') // Optional: bawa data laporannya sekalian
+            ->whereHas('report', function ($query) {
+                // 1. Laporan PM harus sudah dikunci (disahkan)
+                $query->where('is_locked', true);
+            })
+            // 2. Status QC harus Passed atau Downgrade
+            ->whereIn('qc_status', ['passed', 'downgrade'])
+            // 3. Urutkan dari yang terbaru
+            ->orderBy('id', 'desc')
+            ->get();
+    }
 }

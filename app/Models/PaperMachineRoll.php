@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class PaperMachineRoll extends Model
 {
@@ -59,5 +61,10 @@ class PaperMachineRoll extends Model
     public function report(): BelongsTo
     {
         return $this->belongsTo(PaperMachineReport::class, 'report_id');
+    }
+
+    public function winderLogs()
+    {
+        return $this->hasMany(WinderLog::class, 'paper_machine_roll_id');
     }
 }

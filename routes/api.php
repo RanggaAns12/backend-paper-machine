@@ -23,7 +23,6 @@ Route::middleware(['json.force'])->group(function () {
 
     // ── AUTH ROUTES ─────────────────────────────────────────
     Route::prefix('auth')->group(function () {
-
         Route::post('/login', [AuthController::class, 'login'])
             ->middleware('throttle:5,1')
             ->name('auth.login');
@@ -31,6 +30,8 @@ Route::middleware(['json.force'])->group(function () {
         Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+            
+            // ✅ Fitur Keamanan Akun (Ganti Password) otomatis pakai route ini
             Route::post('/change-password', [AuthController::class, 'changePassword'])->name('auth.change-password');
         });
     });
@@ -46,53 +47,67 @@ Route::middleware(['json.force'])->group(function () {
                 Route::apiResource('machines', MachineController::class);
             });
 
+        // ██████ GLOBAL DATA (LINTAS DIVISI) ██████
+        Route::middleware('role:superadmin|admin_paper_machine|admin_winder')->group(function () {
+            Route::get('admin-paper-machine/rolls/available', [PaperMachineRollController::class, 'index'])
+                ->name('paper-machine.rolls.available');
+        });
+
         // ██████ PAPER MACHINE MODULE ██████
-        // Roles: superadmin | admin_paper_machine
-        Route::prefix('paper-machine')
-            ->middleware('role:superadmin|admin_paper_machine')
-            ->group(function () {
+        Route::prefix('admin-paper-machine')->group(function () {
+            
+            // ✅ AKSES BERSAMA (PM & WINDER) 
+            Route::middleware('role:superadmin|admin_paper_machine|admin_winder')->group(function () {
                 
-                // Reports
-                Route::apiResource('reports', PaperMachineReportController::class);
-                Route::patch('reports/{id}/unlock', [PaperMachineReportController::class, 'unlock'])
-                    ->name('paper-machine.reports.unlock')
-                    ->middleware('role:superadmin'); // Hanya superadmin bisa unlock
-
-                // Rolls
-                Route::post('reports/{report}/rolls', [PaperMachineRollController::class, 'store'])
-                    ->name('paper-machine.reports.rolls.store');
-                Route::put('rolls/{id}', [PaperMachineRollController::class, 'update'])
-                    ->name('paper-machine.rolls.update');
-                Route::delete('rolls/{id}', [PaperMachineRollController::class, 'destroy'])
-                    ->name('paper-machine.rolls.destroy');
-
-                // Problems
-                Route::post('reports/{report}/problems', [PaperMachineProblemController::class, 'store'])
-                    ->name('paper-machine.reports.problems.store');
-                Route::put('problems/{id}', [PaperMachineProblemController::class, 'update'])
-                    ->name('paper-machine.problems.update');
-                Route::delete('problems/{id}', [PaperMachineProblemController::class, 'destroy'])
-                    ->name('paper-machine.problems.destroy');
-
-                // Operators
+                // 1. Winder butuh GET Reports untuk daftar Dropdown Scan Barcode
+                Route::get('reports', [PaperMachineReportController::class, 'index']);
+                Route::get('reports/{report}', [PaperMachineReportController::class, 'show']);
+                
+                // 2. Winder & PM sekarang bisa kelola (CRUD) Operator secara penuh
                 Route::apiResource('operators', OperatorController::class);
             });
 
-        // ██████ LAB MODULE ██████
-        // Roles: superadmin | admin_lab
+            // ❌ AKSES KHUSUS (HANYA PM) - Untuk Tambah, Edit, Hapus Data PM
+            Route::middleware('role:superadmin|admin_paper_machine')->group(function () {
+                
+                // Reports (Write)
+                Route::post('reports', [PaperMachineReportController::class, 'store']);
+                Route::put('reports/{report}', [PaperMachineReportController::class, 'update']);
+                Route::delete('reports/{report}', [PaperMachineReportController::class, 'destroy']);
+                Route::patch('reports/{id}/unlock', [PaperMachineReportController::class, 'unlock'])
+                    ->middleware('role:superadmin');
+
+                // Rolls (Write)
+                Route::post('reports/{report}/rolls', [PaperMachineRollController::class, 'store']);
+                Route::put('rolls/{id}', [PaperMachineRollController::class, 'update']);
+                Route::delete('rolls/{id}', [PaperMachineRollController::class, 'destroy']);
+
+                // Problems (Write)
+                Route::post('reports/{report}/problems', [PaperMachineProblemController::class, 'store']);
+                Route::put('problems/{id}', [PaperMachineProblemController::class, 'update']);
+                Route::delete('problems/{id}', [PaperMachineProblemController::class, 'destroy']);
+            });
+        });
+
+       // ██████ LAB MODULE ██████
         Route::prefix('lab')
             ->middleware('role:superadmin|admin_lab')
             ->group(function () {
+                
+                // ✅ JALUR DROPDOWN KHUSUS QC (Wajib ditaruh di atas apiResource)
+                Route::get('quality-tests/pending-rolls', [QualityTestController::class, 'getPendingRolls']);
+                
                 Route::apiResource('quality-tests', QualityTestController::class);
             });
 
         // ██████ WINDER MODULE ██████
-        // Roles: superadmin | admin_winder
-        Route::prefix('winder')
+        Route::prefix('admin-winder')
             ->middleware('role:superadmin|admin_winder')
             ->group(function () {
-                // Endpoint untuk modul Winder (Otomatis mencakup index, store, show, update, destroy)
                 Route::apiResource('winder-logs', WinderLogController::class);
+                
+                Route::patch('winder-logs/{id}/unlock', [WinderLogController::class, 'unlock'])
+                    ->middleware('role:superadmin'); 
             });
     });
 });

@@ -7,41 +7,31 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class WinderLogResource extends JsonResource
 {
-    /**
-     * Mengubah resource (data dari database) ke dalam bentuk array (JSON).
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
-            'id'            => $this->id,
-            'report_id'     => $this->report_id,
-            'operator_id'   => $this->operator_id,
-            
-            // Mengambil nama operator dari relasi (jika direlasikan/di-load)
-            'operator_name' => $this->whenLoaded('operator', function () {
-                return $this->operator->name; 
-            }),
-            
-            // Mengambil info laporan PM dari relasi (jika direlasikan/di-load)
-            'report_info'   => $this->whenLoaded('report', function () {
+            'id'                    => $this->id,
+            'roll_number'           => $this->roll_number,
+            'roll_weight'           => $this->roll_weight,
+            'core_diameter'         => $this->core_diameter,
+            'width'                 => $this->width,
+            'status'                => $this->status,
+            'wound_at'              => $this->wound_at ? $this->wound_at->format('Y-m-d H:i:s') : null,
+            'operator'              => $this->whenLoaded('operator', function () {
                 return [
-                    'date' => $this->report->date,
-                    'grup' => $this->report->grup,
+                    'id'   => $this->operator->id,
+                    'name' => $this->operator->name, // Sesuaikan dengan kolom nama di tabel operators mas
                 ];
             }),
-
-            'roll_number'   => $this->roll_number,
-            'roll_weight'   => $this->roll_weight,
-            'core_diameter' => $this->core_diameter,
-            'width'         => $this->width,
-            'status'        => $this->status,
-            
-            // Memformat tanggal agar rapi saat dibaca oleh Angular
-            'wound_at'      => $this->wound_at ? $this->wound_at->format('Y-m-d H:i:s') : null,
-            'created_at'    => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
-            'updated_at'    => $this->updated_at ? $this->updated_at->format('Y-m-d H:i:s') : null,
+            'paper_machine_roll'    => $this->whenLoaded('paperMachineRoll', function () {
+                return [
+                    'id'          => $this->paperMachineRoll->id,
+                    'roll_number' => $this->paperMachineRoll->roll_number,
+                    'tonase_roll' => $this->paperMachineRoll->tonase_roll,
+                ];
+            }),
+            'created_at'            => $this->created_at->format('Y-m-d H:i:s'),
+            'updated_at'            => $this->updated_at->format('Y-m-d H:i:s'),
         ];
     }
 }
