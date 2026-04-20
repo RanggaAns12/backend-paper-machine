@@ -13,6 +13,8 @@ use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\QualityTestRepositoryInterface;
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
 use App\Repositories\Interfaces\OperatorRepositoryInterface;
+use App\Repositories\Interfaces\FinishedGoodRepositoryInterface;
+use App\Repositories\Interfaces\DeliveryOrderRepositoryInterface;
 
 // Import Repositories
 use App\Repositories\MachineRepository;
@@ -23,6 +25,8 @@ use App\Repositories\UserRepository;
 use App\Repositories\QualityTestRepository;
 use App\Repositories\WinderLogRepository;
 use App\Repositories\OperatorRepository;
+use App\Repositories\FinishedGoodRepository;
+use App\Repositories\DeliveryOrderRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(QualityTestRepositoryInterface::class, QualityTestRepository::class);
         $this->app->bind(WinderLogRepositoryInterface::class, WinderLogRepository::class);
         $this->app->bind(OperatorRepositoryInterface::class, OperatorRepository::class);
+        $this->app->bind(FinishedGoodRepositoryInterface::class, FinishedGoodRepository::class);
+        $this->app->bind(DeliveryOrderRepositoryInterface::class, DeliveryOrderRepository::class);
     }
 
     /**

@@ -4,19 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WinderLog extends Model
 {
     use HasFactory;
 
-    // Pastikan nama tabelnya sesuai dengan migration mas
     protected $table = 'winder_logs';
 
-    // Kolom yang boleh diisi
     protected $fillable = [
         'paper_machine_roll_id',
         'operator_id',
-        'roll_number',
+        'roll_number', // Ini yang akan menjadi Barcode
         'roll_weight',
         'core_diameter',
         'width',
@@ -24,16 +24,18 @@ class WinderLog extends Model
         'wound_at'
     ];
 
-    // ✅ RELASI: Winder Log ini dikerjakan oleh Operator siapa?
-    public function operator()
+    public function operator(): BelongsTo
     {
         return $this->belongsTo(Operator::class, 'operator_id');
     }
 
-    // ✅ RELASI: Winder Log ini berasal dari Jumbo Roll mana?
-    public function paperMachineRoll()
+    public function paperMachineRoll(): BelongsTo
     {
-        // Sesuaikan dengan nama class Model PM Roll mas
         return $this->belongsTo(PaperMachineRoll::class, 'paper_machine_roll_id');
+    }
+
+    public function finishedGood(): HasOne
+    {
+        return $this->hasOne(FinishedGood::class, 'winder_log_id');
     }
 }

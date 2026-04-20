@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
 use App\Repositories\Interfaces\PaperMachineRollRepositoryInterface;
+use App\Events\WinderRollProduced; // ✅ Import Event yang baru kita buat
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -32,33 +33,46 @@ class WinderLogService
 
     public function createWinderLog(array $data)
     {
-        // Pastikan Jumbo Roll (Paper Machine Roll) valid dan ada di database
         $pmRoll = $this->pmRollRepo->findById($data['paper_machine_roll_id']);
         if (!$pmRoll) {
             throw new Exception("Data Paper Machine Roll tidak ditemukan.");
         }
 
-        // Jika statusnya 'done' saat di-create, otomatis catat waktu wound_at
         if (isset($data['status']) && $data['status'] === 'done' && empty($data['wound_at'])) {
             $data['wound_at'] = now();
         }
 
         return DB::transaction(function () use ($data) {
-            return $this->winderLogRepo->create($data);
+            $winderLog = $this->winderLogRepo->create($data);
+
+            // 🔥 REAL-TIME TRIGGER: Jika roll Winder langsung selesai, tembak sinyal ke Gudang!
+            if ($winderLog->status === 'done') {
+                event(new WinderRollProduced($winderLog));
+            }
+
+            return $winderLog;
         });
     }
 
     public function updateWinderLog($id, array $data)
     {
         $winderLog = $this->winderLogRepo->findById($id);
+        $wasAlreadyDone = $winderLog->status === 'done'; // Cek status sebelumnya
 
-        // Auto-fill wound_at jika status berubah menjadi done
-        if (isset($data['status']) && $data['status'] === 'done' && $winderLog->status !== 'done') {
+        if (isset($data['status']) && $data['status'] === 'done' && !$wasAlreadyDone) {
             $data['wound_at'] = $data['wound_at'] ?? now();
         }
 
-        return DB::transaction(function () use ($id, $data) {
-            return $this->winderLogRepo->update($id, $data);
+        return DB::transaction(function () use ($id, $data, $wasAlreadyDone) {
+            $updatedLog = $this->winderLogRepo->update($id, $data);
+
+            // 🔥 REAL-TIME TRIGGER: Jika operator mengupdate status menjadi 'done', tembak sinyal ke Gudang!
+            // Syaratnya: Sebelumnya belum 'done', supaya tidak nyepam/dobel sinyal.
+            if ($updatedLog->status === 'done' && !$wasAlreadyDone) {
+                event(new WinderRollProduced($updatedLog));
+            }
+
+            return $updatedLog;
         });
     }
 

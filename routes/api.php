@@ -15,6 +15,10 @@ use App\Http\Controllers\PaperMachine\PaperMachineRollController;
 use App\Http\Controllers\PaperMachine\PaperMachineProblemController;
 use App\Http\Controllers\PaperMachine\OperatorController;
 
+// Import Warehouse Controllers (Gudang Barang Jadi)
+use App\Http\Controllers\Warehouse\FinishedGoodController;
+use App\Http\Controllers\Warehouse\DeliveryOrderController;
+
 // Health Check
 Route::get('/test', fn() => response()->json(['ok' => true]));
 
@@ -108,6 +112,23 @@ Route::middleware(['json.force'])->group(function () {
                 
                 Route::patch('winder-logs/{id}/unlock', [WinderLogController::class, 'unlock'])
                     ->middleware('role:superadmin'); 
+            });
+
+        // ██████ WAREHOUSE MODULE (GUDANG BARANG JADI) ██████
+        Route::prefix('warehouse')
+            ->middleware('role:superadmin|admin_warehouse') // Asumsi menggunakan role admin_warehouse
+            ->group(function () {
+                
+                // Fase 1 & 2: Inbound & Inventory (Barang Masuk & Stok Gudang)
+                Route::get('inbound-queue', [FinishedGoodController::class, 'getQueue']);
+                Route::post('receive', [FinishedGoodController::class, 'receive']);
+                Route::get('inventory', [FinishedGoodController::class, 'index']);
+
+                // Fase 3: Outbound (Pembuatan Surat Jalan & Scan Keluar Barang)
+                Route::get('delivery-orders', [DeliveryOrderController::class, 'index']);
+                Route::post('delivery-orders', [DeliveryOrderController::class, 'store']);
+                Route::get('delivery-orders/{id}', [DeliveryOrderController::class, 'show']);
+                Route::post('delivery-orders/{id}/scan-out', [DeliveryOrderController::class, 'scanOut']);
             });
     });
 });

@@ -9,21 +9,24 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // 1. DATA MASTER (Pondasi Utama)
-            RoleSeeder::class,       
-            MachineSeeder::class,    
-            OperatorSeeder::class,   
-
-            // 2. DATA PENGGUNA (Akun-akun Karyawan)
+            RoleSeeder::class,
             SuperadminSeeder::class,
             AdminPmSeeder::class,
             AdminLabSeeder::class,
             AdminWinderSeeder::class,
+            
+            // Tambahkan Seeder User Gudang
+            AdminWarehouseSeeder::class,
 
-            // 3. DATA TRANSAKSI / ALUR PABRIK (Efek Domino)
-            PaperMachineSeeder::class, // Langkah 1: Mesin PM mencetak Jumbo Roll
-            QualityTestSeeder::class,  // Langkah 2: Tim Lab QC mengetes Jumbo Roll tersebut
-            WinderLogSeeder::class,    // Langkah 3: Mesin Winder memotong roll yang LULUS QC
+            MachineSeeder::class,
+            OperatorSeeder::class,
+            PaperMachineSeeder::class,
+            QualityTestSeeder::class,
+            WinderLogSeeder::class,
+            
+            // Tambahkan Seeder Transaksi Gudang di paling bawah
+            FinishedGoodSeeder::class,
+            DeliveryOrderSeeder::class,
         ]);
     }
 }

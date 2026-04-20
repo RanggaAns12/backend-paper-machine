@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Database\Eloquent\Relations\HasOne; // ✅ Tambahan import HasOne
 
 class PaperMachineRoll extends Model
 {
@@ -63,8 +63,14 @@ class PaperMachineRoll extends Model
         return $this->belongsTo(PaperMachineReport::class, 'report_id');
     }
 
-    public function winderLogs()
+    public function winderLogs(): HasMany
     {
         return $this->hasMany(WinderLog::class, 'paper_machine_roll_id');
+    }
+
+    // ✅ Tambahan relasi ke QualityTest untuk mengecek kelulusan QC
+    public function qualityTest(): HasOne
+    {
+        return $this->hasOne(QualityTest::class, 'paper_machine_roll_id');
     }
 }
