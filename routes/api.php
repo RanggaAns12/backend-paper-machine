@@ -2,11 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Import Controllers
+// Import Auth & Superadmin Controllers
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Superadmin\UserController;
 use App\Http\Controllers\Superadmin\MachineController;
+
+// Import Lab Controller
 use App\Http\Controllers\Lab\QualityTestController;
+
+// Import Winder Controller
 use App\Http\Controllers\Winder\WinderLogController;
 
 // Import Paper Machine Controllers
@@ -15,9 +19,10 @@ use App\Http\Controllers\PaperMachine\PaperMachineRollController;
 use App\Http\Controllers\PaperMachine\PaperMachineProblemController;
 use App\Http\Controllers\PaperMachine\OperatorController;
 
-// Import Warehouse Controllers (Gudang Barang Jadi)
+// Import Warehouse Controllers (Gudang Barang Jadi & Pre-Order)
 use App\Http\Controllers\Warehouse\FinishedGoodController;
 use App\Http\Controllers\Warehouse\DeliveryOrderController;
+use App\Http\Controllers\Warehouse\PreOrderController; // ✅ Pindah ke sini
 
 // Health Check
 Route::get('/test', fn() => response()->json(['ok' => true]));
@@ -35,7 +40,7 @@ Route::middleware(['json.force'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
             
-            // ✅ Fitur Keamanan Akun (Ganti Password) otomatis pakai route ini
+            // Fitur Keamanan Akun (Ganti Password) otomatis pakai route ini
             Route::post('/change-password', [AuthController::class, 'changePassword'])->name('auth.change-password');
         });
     });
@@ -60,9 +65,8 @@ Route::middleware(['json.force'])->group(function () {
         // ██████ PAPER MACHINE MODULE ██████
         Route::prefix('admin-paper-machine')->group(function () {
             
-            // ✅ AKSES BERSAMA (PM & WINDER) 
+            // AKSES BERSAMA (PM & WINDER) 
             Route::middleware('role:superadmin|admin_paper_machine|admin_winder')->group(function () {
-                
                 // 1. Winder butuh GET Reports untuk daftar Dropdown Scan Barcode
                 Route::get('reports', [PaperMachineReportController::class, 'index']);
                 Route::get('reports/{report}', [PaperMachineReportController::class, 'show']);
@@ -71,9 +75,8 @@ Route::middleware(['json.force'])->group(function () {
                 Route::apiResource('operators', OperatorController::class);
             });
 
-            // ❌ AKSES KHUSUS (HANYA PM) - Untuk Tambah, Edit, Hapus Data PM
+            // AKSES KHUSUS (HANYA PM) - Untuk Tambah, Edit, Hapus Data PM
             Route::middleware('role:superadmin|admin_paper_machine')->group(function () {
-                
                 // Reports (Write)
                 Route::post('reports', [PaperMachineReportController::class, 'store']);
                 Route::put('reports/{report}', [PaperMachineReportController::class, 'update']);
@@ -97,10 +100,8 @@ Route::middleware(['json.force'])->group(function () {
         Route::prefix('lab')
             ->middleware('role:superadmin|admin_lab')
             ->group(function () {
-                
-                // ✅ JALUR DROPDOWN KHUSUS QC (Wajib ditaruh di atas apiResource)
+                // JALUR DROPDOWN KHUSUS QC (Wajib ditaruh di atas apiResource)
                 Route::get('quality-tests/pending-rolls', [QualityTestController::class, 'getPendingRolls']);
-                
                 Route::apiResource('quality-tests', QualityTestController::class);
             });
 
@@ -116,13 +117,16 @@ Route::middleware(['json.force'])->group(function () {
 
         // ██████ WAREHOUSE MODULE (GUDANG BARANG JADI) ██████
         Route::prefix('warehouse')
-            ->middleware('role:superadmin|admin_warehouse') // Asumsi menggunakan role admin_warehouse
+            ->middleware('role:superadmin|admin_warehouse')
             ->group(function () {
                 
-                // Fase 1 & 2: Inbound & Inventory (Barang Masuk & Stok Gudang)
-                Route::get('inbound-queue', [FinishedGoodController::class, 'getQueue']);
-                Route::post('receive', [FinishedGoodController::class, 'receive']);
-                Route::get('inventory', [FinishedGoodController::class, 'index']);
+                // ✅ FITUR PRE-ORDER
+                Route::get('pre-orders', [PreOrderController::class, 'index']);
+                Route::post('pre-orders', [PreOrderController::class, 'store']);
+
+                // Fase 1 & 2: Stok Gudang
+                // 🔥 PERBAIKAN: Ubah 'inventory' menjadi 'stock' agar sinkron dengan Angular
+                Route::get('stock', [FinishedGoodController::class, 'index']);
 
                 // Fase 3: Outbound (Pembuatan Surat Jalan & Scan Keluar Barang)
                 Route::get('delivery-orders', [DeliveryOrderController::class, 'index']);
@@ -130,5 +134,6 @@ Route::middleware(['json.force'])->group(function () {
                 Route::get('delivery-orders/{id}', [DeliveryOrderController::class, 'show']);
                 Route::post('delivery-orders/{id}/scan-out', [DeliveryOrderController::class, 'scanOut']);
             });
-    });
+            
+    }); // <-- End of Protected Routes
 });

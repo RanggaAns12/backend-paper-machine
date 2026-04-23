@@ -38,4 +38,9 @@ class WinderLog extends Model
     {
         return $this->hasOne(FinishedGood::class, 'winder_log_id');
     }
+    
+    public function preOrder()
+    {
+        return $this->belongsTo(PreOrder::class, 'po_number', 'po_number');
+    }
 }

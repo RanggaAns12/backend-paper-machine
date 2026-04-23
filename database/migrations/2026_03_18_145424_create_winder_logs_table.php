@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('winder_logs', function (Blueprint $table) {
             $table->id();
             
+            // ✅ INTEGRASI PRE-ORDER (GUDANG)
+            // Opsional (nullable) karena Winder bisa memproduksi Free Stock (tanpa PO)
+            $table->string('po_number')->nullable();
+            
             // 1. Relasi ke Jumbo Roll (Paper Machine Roll) yang sedang dipotong
             // Perbaikan: Diarahkan ke paper_machine_rolls agar traceability terjamin
             $table->foreignId('paper_machine_roll_id')

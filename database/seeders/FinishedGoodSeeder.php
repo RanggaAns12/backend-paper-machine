@@ -10,8 +10,9 @@ class FinishedGoodSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil maksimal 3 roll dari winder yang sudah 'done' tapi belum masuk gudang
-        $winderLogs = WinderLog::where('status', 'done')
+        // 🔥 Tambahkan with('paperMachineRoll') agar kita bisa ambil grade-nya
+        $winderLogs = WinderLog::with('paperMachineRoll')
+            ->where('status', 'done')
             ->whereDoesntHave('finishedGood')
             ->take(3)
             ->get();
@@ -22,6 +23,9 @@ class FinishedGoodSeeder extends Seeder
         }
 
         foreach ($winderLogs as $log) {
+            // Ambil grade dari PaperMachineRoll asal, jika tidak ada set default misalnya 'Grade A'
+            $grade = $log->paperMachineRoll ? $log->paperMachineRoll->grade : 'Grade A';
+
             FinishedGood::firstOrCreate(
                 ['winder_log_id' => $log->id],
                 [
@@ -29,8 +33,8 @@ class FinishedGoodSeeder extends Seeder
                     'roll_weight'    => $log->roll_weight,
                     'width'          => $log->width,
                     'core_diameter'  => $log->core_diameter,
-                    'location_block' => 'A',
-                    'location_line'  => '01',
+                    'grade'          => $grade, // ✅ Tambahkan kolom grade
+                    // ❌ location_block dan location_line dihapus
                     'status'         => 'in_stock'
                 ]
             );

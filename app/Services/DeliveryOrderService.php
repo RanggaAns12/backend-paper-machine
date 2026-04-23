@@ -43,7 +43,6 @@ class DeliveryOrderService
             }
 
             // B. Kunci Barang (Roll) agar tidak di-scan oleh Admin/DO lain
-            // Asumsi roll_number adalah field yang dicari
             $good = FinishedGood::where('roll_number', $rollNumber)->lockForUpdate()->first();
             
             if (!$good) {
@@ -53,28 +52,24 @@ class DeliveryOrderService
                 throw new Exception("Gagal: Status barang saat ini adalah " . strtoupper($good->status) . ".");
             }
 
-            // C. VALIDASI FIFO (First-In, First-Out)
-            // Cari apakah ada roll kertas dengan GSM dan Lebar yang SAMA, tapi diproduksi LEBIH LAMA dari roll yang di-scan ini.
-            // Catatan: Jika Mas menyimpan GSM dan Lebar di tabel WinderLog (bukan FinishedGood),
-            // maka Mas harus me-load relasi winderLog terlebih dahulu ($good->load('winderLog')).
+            // C. VALIDASI FIFO (First-In, First-Out) 🔥 SUDAH DIPERBAIKI
+            // Cari roll kertas dengan Lebar dan GRADE yang SAMA, tapi diproduksi LEBIH LAMA
             $olderRollExists = FinishedGood::where('status', 'in_stock')
-                ->where('width', $good->width) // Bandingkan dengan spek yang sama
-                // ->where('gsm', $good->gsm) // Uncomment jika kolom gsm ada di tabel ini
-                ->where('created_at', '<', $good->created_at) // Cari yang lebih lama
+                ->where('width', $good->width) 
+                ->where('grade', $good->grade) // ✅ Tambahkan filter Grade
+                ->where('created_at', '<', $good->created_at) // Cari yang masuk gudang lebih dulu
                 ->exists();
 
             if ($olderRollExists) {
-                // Di sistem Enterprise, biasanya ini dikembalikan sebagai Warning (bukan Exception mutlak), 
-                // tapi supir harus menginput "Alasan Override" (misal: "Barang tertimpa rak").
-                // Namun untuk keamanan awal, kita tolak transaksinya.
-                throw new Exception("PELANGGARAN FIFO: Masih ada Roll kertas dengan spesifikasi yang sama namun diproduksi lebih lama. Harap ambil stok yang lebih lama terlebih dahulu.");
+                throw new Exception("PELANGGARAN FIFO: Masih ada Roll kertas ({$good->grade}, Lebar {$good->width}) yang masuk gudang lebih dulu. Harap ambil stok yang lebih lama terlebih dahulu.");
             }
 
             // D. Eksekusi Muat Barang (Simpan ke Item DO)
             $item = $this->repository->addItemToDO($do, $good);
 
-            // E. Update Status (Good -> Shipped, DO -> Loading)
-            $good->update(['status' => 'shipped']); // Atau 'booked_for_do' jika DO belum dikunci
+            // E. Update Status
+            // Karena barang sudah di-scan masuk truk, statusnya jadi shipped, otomatis hilang dari inventori
+            $good->update(['status' => 'shipped']); 
             
             if ($do->status === 'draft') {
                 $do->update(['status' => 'loading']);

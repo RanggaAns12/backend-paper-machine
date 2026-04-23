@@ -12,12 +12,11 @@ class FinishedGood extends Model
 
     protected $fillable = [
         'winder_log_id', 
-        'roll_number', // Barcode dari Winder
+        'roll_number', 
         'roll_weight', 
         'width', 
         'core_diameter',
-        'location_block', 
-        'location_line',  
+        'grade', // ✅ Tambahkan ini
         'status'
     ];
 

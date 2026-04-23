@@ -7,7 +7,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface FinishedGoodRepositoryInterface
 {
-    public function getInboundQueue();
+    // Fungsi getInboundQueue() sudah kita hapus ❌
+
     public function getInStockPaginated(int $perPage = 15): LengthAwarePaginator;
     public function create(array $data): FinishedGood;
 }

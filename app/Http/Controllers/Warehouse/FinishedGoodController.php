@@ -11,42 +11,17 @@ class FinishedGoodController extends Controller
 {
     public function __construct(protected FinishedGoodService $finishedGoodService) {}
 
-    public function getQueue(): JsonResponse
-    {
-        $queue = $this->finishedGoodService->getInboundQueue();
-        return response()->json(['success' => true, 'data' => $queue]);
-    }
-
+    /**
+     * Mengambil daftar stok yang saat ini tersedia di gudang.
+     */
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->get('per_page', 15);
         $stock = $this->finishedGoodService->getInStock($perPage);
-        return response()->json(['success' => true, 'data' => $stock]);
-    }
-
-    public function receive(Request $request): JsonResponse
-    {
-        // 🔥 PERBAIKAN: Validasi input hanya Blok dan Jalur
-        $validated = $request->validate([
-            'winder_log_id'  => 'required|exists:winder_logs,id',
-            'location_block' => 'required|string|max:10',
-            'location_line'  => 'required|string|max:10',
+        
+        return response()->json([
+            'success' => true, 
+            'data'    => $stock
         ]);
-
-        try {
-            $good = $this->finishedGoodService->receiveGood($validated);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Barang berhasil diterima dan ditempatkan di Jalur Gudang.',
-                'data'    => $good
-            ], 201);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-        }
     }
 }

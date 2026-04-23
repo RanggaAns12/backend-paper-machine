@@ -11,15 +11,7 @@ class FinishedGoodRepository implements FinishedGoodRepositoryInterface
 {
     public function __construct(protected FinishedGood $model) {}
 
-    // Mengambil roll dari Winder yang statusnya sudah 'done' tapi BELUM masuk tabel FinishedGood
-    public function getInboundQueue()
-    {
-        return WinderLog::with('paperMachineRoll:id,grade,roll_number')
-            ->where('status', 'done')
-            ->whereDoesntHave('finishedGood') // Filter agar yang sudah masuk gudang tidak muncul lagi
-            ->orderBy('updated_at', 'asc')
-            ->get();
-    }
+    // Fungsi getInboundQueue() sudah dihapus dari sini ❌
 
     // Mengambil daftar stok yang sedang ada di dalam gudang (In Stock)
     public function getInStockPaginated(int $perPage = 15): LengthAwarePaginator

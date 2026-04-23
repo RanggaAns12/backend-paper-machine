@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+// ==========================================
 // Import Interfaces
+// ==========================================
 use App\Repositories\Interfaces\MachineRepositoryInterface;
 use App\Repositories\Interfaces\PaperMachineReportRepositoryInterface;
 use App\Repositories\Interfaces\PaperMachineRollRepositoryInterface;
@@ -15,8 +17,11 @@ use App\Repositories\Interfaces\WinderLogRepositoryInterface;
 use App\Repositories\Interfaces\OperatorRepositoryInterface;
 use App\Repositories\Interfaces\FinishedGoodRepositoryInterface;
 use App\Repositories\Interfaces\DeliveryOrderRepositoryInterface;
+use App\Repositories\Interfaces\PreOrderRepositoryInterface; // ✅ Ditambahkan di sini
 
+// ==========================================
 // Import Repositories
+// ==========================================
 use App\Repositories\MachineRepository;
 use App\Repositories\PaperMachineReportRepository;
 use App\Repositories\PaperMachineRollRepository;
@@ -27,6 +32,7 @@ use App\Repositories\WinderLogRepository;
 use App\Repositories\OperatorRepository;
 use App\Repositories\FinishedGoodRepository;
 use App\Repositories\DeliveryOrderRepository;
+use App\Repositories\PreOrderRepository; // ✅ Ditambahkan di sini
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(OperatorRepositoryInterface::class, OperatorRepository::class);
         $this->app->bind(FinishedGoodRepositoryInterface::class, FinishedGoodRepository::class);
         $this->app->bind(DeliveryOrderRepositoryInterface::class, DeliveryOrderRepository::class);
+        $this->app->bind(PreOrderRepositoryInterface::class, PreOrderRepository::class);
     }
 
     /**
