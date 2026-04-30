@@ -16,7 +16,7 @@ return [
     */
 
     // Pastikan jalur API dan Sanctum cookie diizinkan lewat
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'broadcasting/auth'],
 
     // Izinkan semua metode request (GET, POST, PUT, DELETE, dll)
     'allowed_methods' => ['*'],

@@ -23,6 +23,12 @@ class FinishedGoodRepository implements FinishedGoodRepositoryInterface
             ->paginate($perPage);
     }
 
+    public function findByRollNumber(string $barcode)
+    {
+        // Sesuaikan 'roll_number' dengan nama kolom barcode di tabel finished_goods
+        return $this->model->where('roll_number', $barcode)->first();
+    }
+
     // Menyimpan data roll ke dalam gudang
     public function create(array $data): FinishedGood
     {

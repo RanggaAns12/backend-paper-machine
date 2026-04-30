@@ -11,7 +11,7 @@ class PreOrderController extends Controller
 {
     protected PreOrderService $preOrderService;
 
-    // ✅ Inject Service ke dalam Controller (Sesuai dengan Arsitektur Mas)
+    // ✅ HANYA INJECT SERVICE, TIDAK ADA KODE MIDDLEWARE SAMA SEKALI DI SINI
     public function __construct(PreOrderService $preOrderService)
     {
         $this->preOrderService = $preOrderService;
@@ -47,10 +47,4 @@ class PreOrderController extends Controller
             'data' => $order
         ], 201);
     }
-    
-    /**
-     * Nanti jika Mas butuh fitur Cancel PO atau Lihat Detail PO, 
-     * kita bisa tambahkan function show(), update(), atau destroy() di sini.
-     * Untuk sekarang, index dan store sudah cukup untuk menjalankan alur utamanya.
-     */
 }

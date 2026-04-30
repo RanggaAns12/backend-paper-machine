@@ -22,7 +22,7 @@ use App\Http\Controllers\PaperMachine\OperatorController;
 // Import Warehouse Controllers (Gudang Barang Jadi & Pre-Order)
 use App\Http\Controllers\Warehouse\FinishedGoodController;
 use App\Http\Controllers\Warehouse\DeliveryOrderController;
-use App\Http\Controllers\Warehouse\PreOrderController; // ✅ Pindah ke sini
+use App\Http\Controllers\Warehouse\PreOrderController;
 
 // Health Check
 Route::get('/test', fn() => response()->json(['ok' => true]));
@@ -30,7 +30,9 @@ Route::get('/test', fn() => response()->json(['ok' => true]));
 // Force JSON Response Middleware Group
 Route::middleware(['json.force'])->group(function () {
 
-    // ── AUTH ROUTES ─────────────────────────────────────────
+    // ==========================================
+    // AUTH ROUTES
+    // ==========================================
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])
             ->middleware('throttle:5,1')
@@ -45,10 +47,12 @@ Route::middleware(['json.force'])->group(function () {
         });
     });
 
-    // ── PROTECTED ROUTES ───────────────────────────────────
+    // ==========================================
+    // PROTECTED ROUTES
+    // ==========================================
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
-        // ██████ SUPERADMIN ONLY ██████
+        // --- SUPERADMIN ONLY ---
         Route::prefix('superadmin')
             ->middleware('role:superadmin')
             ->group(function () {
@@ -56,13 +60,13 @@ Route::middleware(['json.force'])->group(function () {
                 Route::apiResource('machines', MachineController::class);
             });
 
-        // ██████ GLOBAL DATA (LINTAS DIVISI) ██████
+        // --- GLOBAL DATA (LINTAS DIVISI) ---
         Route::middleware('role:superadmin|admin_paper_machine|admin_winder')->group(function () {
             Route::get('admin-paper-machine/rolls/available', [PaperMachineRollController::class, 'index'])
                 ->name('paper-machine.rolls.available');
         });
 
-        // ██████ PAPER MACHINE MODULE ██████
+        // --- PAPER MACHINE MODULE ---
         Route::prefix('admin-paper-machine')->group(function () {
             
             // AKSES BERSAMA (PM & WINDER) 
@@ -96,7 +100,7 @@ Route::middleware(['json.force'])->group(function () {
             });
         });
 
-       // ██████ LAB MODULE ██████
+       // --- LAB MODULE ---
         Route::prefix('lab')
             ->middleware('role:superadmin|admin_lab')
             ->group(function () {
@@ -105,7 +109,7 @@ Route::middleware(['json.force'])->group(function () {
                 Route::apiResource('quality-tests', QualityTestController::class);
             });
 
-        // ██████ WINDER MODULE ██████
+        // --- WINDER MODULE ---
         Route::prefix('admin-winder')
             ->middleware('role:superadmin|admin_winder')
             ->group(function () {
@@ -115,18 +119,26 @@ Route::middleware(['json.force'])->group(function () {
                     ->middleware('role:superadmin'); 
             });
 
-        // ██████ WAREHOUSE MODULE (GUDANG BARANG JADI) ██████
-        Route::prefix('warehouse')
-            ->middleware('role:superadmin|admin_warehouse')
-            ->group(function () {
+        // ==========================================
+        // 🔥 WAREHOUSE MODULE (GUDANG BARANG JADI)
+        // ==========================================
+        Route::prefix('warehouse')->group(function () {
                 
-                // ✅ FITUR PRE-ORDER
+            // 🟢 AKSES BERSAMA (Gudang & Winder)
+            Route::middleware('role:superadmin|admin_warehouse|admin_winder')->group(function () {
+                // Winder butuh akses ke sini agar Dropdown PO bisa muncul di layarnya
                 Route::get('pre-orders', [PreOrderController::class, 'index']);
+            });
+
+            // 🔴 AKSES KHUSUS GUDANG (Hanya Admin Gudang & Superadmin)
+            Route::middleware('role:superadmin|admin_warehouse')->group(function () {
+                // Manajemen Pre-Order (Simpan PO baru)
                 Route::post('pre-orders', [PreOrderController::class, 'store']);
 
                 // Fase 1 & 2: Stok Gudang
-                // 🔥 PERBAIKAN: Ubah 'inventory' menjadi 'stock' agar sinkron dengan Angular
                 Route::get('stock', [FinishedGoodController::class, 'index']);
+                Route::get('finished-goods/check-barcode/{barcode}', [FinishedGoodController::class, 'checkBarcode']);
+                Route::post('finished-goods/cancel-scan', [FinishedGoodController::class, 'cancelScan']);
 
                 // Fase 3: Outbound (Pembuatan Surat Jalan & Scan Keluar Barang)
                 Route::get('delivery-orders', [DeliveryOrderController::class, 'index']);
@@ -134,6 +146,23 @@ Route::middleware(['json.force'])->group(function () {
                 Route::get('delivery-orders/{id}', [DeliveryOrderController::class, 'show']);
                 Route::post('delivery-orders/{id}/scan-out', [DeliveryOrderController::class, 'scanOut']);
             });
+
+        });
             
     }); // <-- End of Protected Routes
+
+    Route::get('/debug-po', function() {
+        $poNumber = 'PO-20260427-002'; // Kita lacak PO Mayora
+        
+        $winderLogs = \App\Models\WinderLog::where('po_number', $poNumber)->get();
+        $finishedGoods = \App\Models\FinishedGood::whereIn('winder_log_id', $winderLogs->pluck('id'))->get();
+        
+        return response()->json([
+            '1_winder_logs_ditemukan' => $winderLogs->count() . ' Roll',
+            '2_data_winder_logs' => $winderLogs,
+            '3_barang_gudang_ditemukan' => $finishedGoods->count() . ' Roll',
+            '4_data_barang_gudang' => $finishedGoods,
+            '5_total_kalkulasi_berat' => $finishedGoods->sum('roll_weight') . ' KG'
+        ]);
+    });
 });

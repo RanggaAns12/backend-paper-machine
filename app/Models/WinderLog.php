@@ -14,9 +14,10 @@ class WinderLog extends Model
     protected $table = 'winder_logs';
 
     protected $fillable = [
+        'po_number',
         'paper_machine_roll_id',
         'operator_id',
-        'roll_number', // Ini yang akan menjadi Barcode
+        'roll_number',
         'roll_weight',
         'core_diameter',
         'width',

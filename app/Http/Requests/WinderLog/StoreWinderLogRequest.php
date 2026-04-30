@@ -22,6 +22,9 @@ class StoreWinderLogRequest extends FormRequest
             'width'                 => ['nullable', 'numeric', 'min:0'],
             'status'                => ['nullable', 'in:pending,done'],
             'wound_at'              => ['nullable', 'date'],
+            
+            // ✅ TAMBAHAN BARU: Izinkan po_number masuk dan pastikan PO-nya valid (ada di database)
+            'po_number'             => ['nullable', 'string', 'exists:pre_orders,po_number'],
         ];
     }
 }

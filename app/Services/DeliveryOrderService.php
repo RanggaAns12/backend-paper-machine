@@ -27,7 +27,7 @@ class DeliveryOrderService
         return $this->repository->createDO($data);
     }
 
-    // 🔥 FITUR UTAMA: Scan Barcode dan Muat ke Truk (Enterprise Edition)
+    // FITUR UTAMA: Scan Barcode dan Muat ke Truk (Enterprise Edition)
     public function scanOutItem($doId, string $rollNumber)
     {
         return DB::transaction(function () use ($doId, $rollNumber) {
@@ -52,11 +52,11 @@ class DeliveryOrderService
                 throw new Exception("Gagal: Status barang saat ini adalah " . strtoupper($good->status) . ".");
             }
 
-            // C. VALIDASI FIFO (First-In, First-Out) 🔥 SUDAH DIPERBAIKI
+            // C. VALIDASI FIFO (First-In, First-Out)
             // Cari roll kertas dengan Lebar dan GRADE yang SAMA, tapi diproduksi LEBIH LAMA
             $olderRollExists = FinishedGood::where('status', 'in_stock')
                 ->where('width', $good->width) 
-                ->where('grade', $good->grade) // ✅ Tambahkan filter Grade
+                ->where('grade', $good->grade)
                 ->where('created_at', '<', $good->created_at) // Cari yang masuk gudang lebih dulu
                 ->exists();
 
@@ -71,8 +71,9 @@ class DeliveryOrderService
             // Karena barang sudah di-scan masuk truk, statusnya jadi shipped, otomatis hilang dari inventori
             $good->update(['status' => 'shipped']); 
             
+            // PERBAIKAN: Ubah status menjadi 'ready' (bukan 'loading' karena tidak ada di database)
             if ($do->status === 'draft') {
-                $do->update(['status' => 'loading']);
+                $do->update(['status' => 'ready']);
             }
 
             // F. Update Total Tonase di DO Header

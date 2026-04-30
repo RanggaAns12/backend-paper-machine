@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             
             // Tambahkan Seeder Transaksi Gudang di paling bawah
             FinishedGoodSeeder::class,
+            PreOrderSeeder::class,
             DeliveryOrderSeeder::class,
         ]);
     }

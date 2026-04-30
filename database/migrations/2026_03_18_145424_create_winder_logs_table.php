@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('po_number')->nullable();
             
             // 1. Relasi ke Jumbo Roll (Paper Machine Roll) yang sedang dipotong
-            // Perbaikan: Diarahkan ke paper_machine_rolls agar traceability terjamin
             $table->foreignId('paper_machine_roll_id')
                   ->constrained('paper_machine_rolls')
                   ->cascadeOnDelete();
@@ -30,14 +29,13 @@ return new class extends Migration
                   ->cascadeOnDelete();
             
             // 3. Detail Spesifikasi Potongan Roll Winder
-            // Perbaikan: Ditambahkan ->unique() untuk mencegah duplikasi barcode
-            $table->string('roll_number')->unique(); 
+            $table->string('roll_number')->unique(); // Cegah duplikasi barcode
             $table->decimal('roll_weight', 10, 2)->nullable(); // Berat roll (Kg)
             $table->decimal('core_diameter', 8, 2)->nullable(); // Diameter inti
             $table->decimal('width', 10, 2)->nullable(); // Lebar potongan
             
-            // 4. Status Pengerjaan Winder
-            $table->enum('status', ['pending', 'done'])->default('pending');
+            // 4. Status Pengerjaan Winder 🔥 (PERBAIKAN: 'pending' dihapus, langsung 'done')
+            $table->enum('status', ['done'])->default('done');
             
             // 5. Waktu aktual saat roll selesai digulung
             $table->timestamp('wound_at')->nullable();

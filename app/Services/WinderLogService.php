@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Repositories\Interfaces\WinderLogRepositoryInterface;
 use App\Repositories\Interfaces\PaperMachineRollRepositoryInterface;
-use App\Repositories\Interfaces\FinishedGoodRepositoryInterface; //Import Repo Gudang
+use App\Repositories\Interfaces\FinishedGoodRepositoryInterface;
 use App\Events\WinderRollProduced;
+use App\Models\PreOrder; // ✅ Import Model PreOrder
+use App\Models\FinishedGood; // ✅ Import Model FinishedGood
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -13,12 +15,12 @@ class WinderLogService
 {
     protected $winderLogRepo;
     protected $pmRollRepo;
-    protected $finishedGoodRepo; // Tambahkan property untuk Repo Gudang
+    protected $finishedGoodRepo;
 
     public function __construct(
         WinderLogRepositoryInterface $winderLogRepo,
         PaperMachineRollRepositoryInterface $pmRollRepo,
-        FinishedGoodRepositoryInterface $finishedGoodRepo //Inject di sini
+        FinishedGoodRepositoryInterface $finishedGoodRepo
     ) {
         $this->winderLogRepo = $winderLogRepo;
         $this->pmRollRepo = $pmRollRepo;
@@ -49,7 +51,7 @@ class WinderLogService
         return DB::transaction(function () use ($data, $pmRoll) {
             $winderLog = $this->winderLogRepo->create($data);
 
-            // TRIGGER OTOMATIS: Jika langsung selesai, masukkan ke Gudang
+            // TRIGGER OTOMATIS: Jika langsung selesai, masukkan ke Gudang & Update PO
             if ($winderLog->status === 'done') {
                 $this->autoMoveToInventory($winderLog, $pmRoll->grade);
             }
@@ -61,7 +63,7 @@ class WinderLogService
     public function updateWinderLog($id, array $data)
     {
         $winderLog = $this->winderLogRepo->findById($id);
-        $wasAlreadyDone = $winderLog->status === 'done'; // Cek status sebelumnya
+        $wasAlreadyDone = $winderLog->status === 'done';
 
         if (isset($data['status']) && $data['status'] === 'done' && !$wasAlreadyDone) {
             $data['wound_at'] = $data['wound_at'] ?? now();
@@ -72,7 +74,6 @@ class WinderLogService
 
             // TRIGGER OTOMATIS: Jika operator mengubah status jadi selesai
             if ($updatedLog->status === 'done' && !$wasAlreadyDone) {
-                // Ambil data Paper Machine Roll untuk mendapatkan Grade-nya
                 $pmRoll = $this->pmRollRepo->findById($updatedLog->paper_machine_roll_id);
                 $grade = $pmRoll ? $pmRoll->grade : null;
                 
@@ -92,6 +93,7 @@ class WinderLogService
 
     /**
      * Fungsi Internal: Memindahkan hasil potongan Winder langsung ke Gudang (Otomatis)
+     * DAN MENGUPDATE STATUS PRE-ORDER! 🔥
      */
     protected function autoMoveToInventory($winderLog, $grade)
     {
@@ -102,11 +104,38 @@ class WinderLogService
             'roll_weight'    => $winderLog->roll_weight,
             'width'          => $winderLog->width,
             'core_diameter'  => $winderLog->core_diameter,
-            'grade'          => $grade, // ✅ Grade dibawa dari Paper Machine Roll!
+            'grade'          => $grade, 
             'status'         => 'in_stock'
         ]);
 
-        // 2. Broadcast event agar Frontend Gudang bisa memunculkan notifikasi "Ada Kertas Masuk"
+        // ==========================================================
+        // 🔥 2. LOGIKA OTOMATIS UPDATE STATUS PRE-ORDER
+        // ==========================================================
+        if (!empty($winderLog->po_number)) {
+            // Cari data Pre-Order berdasarkan po_number yang sedang dikerjakan Winder
+            $po = PreOrder::where('po_number', $winderLog->po_number)->first();
+
+            if ($po) {
+                // Hitung total berat roll (dari FinishedGood) yang nyangkut di PO ini
+                $totalProduced = FinishedGood::whereHas('winderLog', function($query) use ($po) {
+                    $query->where('po_number', $po->po_number);
+                })->sum('roll_weight');
+
+                // Tentukan status baru
+                $newStatus = 'proses_pm'; // Default sedang jalan
+                
+                // Jika total yang diproduksi sudah mencapai atau melebihi target qty PO
+                if ($totalProduced >= $po->target_qty) {
+                    $newStatus = 'selesai_pm';
+                }
+
+                // Update status PO-nya!
+                $po->update(['status' => $newStatus]);
+            }
+        }
+        // ==========================================================
+
+        // 3. Broadcast event agar Frontend Gudang bisa memunculkan notifikasi
         event(new WinderRollProduced($winderLog));
     }
 }
